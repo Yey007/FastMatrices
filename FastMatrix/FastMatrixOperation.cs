@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Windows.Media.TextFormatting;
 using ILGPU;
 using ILGPU.Runtime;
 
@@ -59,28 +60,52 @@ namespace FastMatrixOperations
             public static FastMatrix GPU(FastMatrix one, FastMatrix two)
             {
                 Stopwatch watch = Stopwatch.StartNew();
-                using(var context = new Context())
+                Stopwatch watch2 = Stopwatch.StartNew();
+                var accelerator = HardwareAcceleratorManager.GPUAccelerator;
+                var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<double>, ArrayView2D<double>, ArrayView2D<double>>(GPUAdd);
+                MemoryBuffer2D<double> bufferOne;
+                MemoryBuffer2D<double> bufferTwo;
+
+                if (one.buffer != null)
                 {
-                    using(var accelerator = Accelerator.Create(context, Accelerator.Accelerators[1]))
-                    {
-                        var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<double>, ArrayView2D<double>, ArrayView2D<double>>(GPUAdd);
-
-                        using (var aBuffer = accelerator.Allocate<double>(one.GetSize(0), one.GetSize(1)))
-                        using (var bBuffer = accelerator.Allocate<double>(two.GetSize(0), two.GetSize(1)))
-                        using (var resBuffer = accelerator.Allocate<double>(one.GetSize(0), two.GetSize(1)))
-                        {
-                            aBuffer.CopyFrom(one.array2d, Index2.Zero, Index2.Zero, aBuffer.Extent);
-                            bBuffer.CopyFrom(two.array2d, Index2.Zero, Index2.Zero, bBuffer.Extent);
-
-                            kernel(resBuffer.Extent, aBuffer, bBuffer, resBuffer);
-                            accelerator.Synchronize();
-
-                            Console.WriteLine("GPU took " + watch.ElapsedMilliseconds + "ms");
-                            return new FastMatrix(resBuffer.GetAs2DArray());
-                        }
-                    }
+                    bufferOne = one.buffer;
                 }
+                else
+                {
+                    bufferOne = HardwareAcceleratorManager.GPUAccelerator.Allocate<double>(one.GetSize(0), one.GetSize(1));
+                    bufferOne.CopyFrom(one.array2d, Index2.Zero, Index2.Zero, bufferOne.Extent);
+                    one.buffer = bufferOne;
+                }
+
+                if (two.buffer != null)
+                {
+                    bufferTwo = two.buffer;
+                }
+                else
+                {
+                    bufferTwo = HardwareAcceleratorManager.GPUAccelerator.Allocate<double>(two.GetSize(0), two.GetSize(1));
+                    bufferTwo.CopyFrom(two.array2d, Index2.Zero, Index2.Zero, bufferTwo.Extent);
+                    two.buffer = bufferTwo;
+                }
+                var bufferResult = HardwareAcceleratorManager.GPUAccelerator.Allocate<double>(one.GetSize(0), one.GetSize(1));
+                Console.WriteLine("Buffer allocation took " + watch2.ElapsedMilliseconds + "ms");
+                watch2.Reset();
+                watch2.Start();
+
+                Console.WriteLine("Copy took " + watch2.ElapsedMilliseconds + "ms");
+                watch2.Reset();
+                watch2.Start();
+
+                kernel(bufferResult.Extent, bufferOne, bufferTwo, bufferResult);
+                accelerator.Synchronize();
+                Console.WriteLine("Kernel operation + sync took " + watch2.ElapsedMilliseconds + "ms");
+
+                Console.WriteLine("GPU took " + watch.ElapsedMilliseconds + "ms");
+                FastMatrix returnMatrix = new FastMatrix(bufferResult.GetAs2DArray());
+                HardwareAcceleratorManager.Dispose();
+                return returnMatrix;
             }
+
 
             /// <summary>
             /// Adds two matrices using multiple threads on the CPU.
@@ -115,6 +140,7 @@ namespace FastMatrixOperations
                 resView[index] = aView[new Index2(x, y)] + bView[new Index2(x, y)];
             }
         }
+
 
         /// <summary>
         /// Contains functions that subtract matrices.

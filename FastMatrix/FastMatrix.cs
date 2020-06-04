@@ -19,6 +19,8 @@ namespace FastMatrixOperations
         /// </remarks>
         public double[,] array2d;
 
+        public MemoryBuffer2D<double> buffer;
+
         /// <summary>
         /// Indexer to make querries look nicer
         /// </summary>
@@ -43,6 +45,7 @@ namespace FastMatrixOperations
         public FastMatrix(int rows, int columns)
         {
             array2d = new double[rows, columns];
+            buffer = null;
         }
 
         /// <summary>
@@ -70,6 +73,9 @@ namespace FastMatrixOperations
                     array2d[i, j] = array[i][j];
                 }
             }
+
+            //set buffer to null so it can be set later/checked
+            buffer = null;
         }
 
         /// <summary>
@@ -79,6 +85,7 @@ namespace FastMatrixOperations
         public FastMatrix(double[,] array)
         {
             array2d = array;
+            buffer = null;
         }
 
         /// <summary>
@@ -151,13 +158,12 @@ namespace FastMatrixOperations
             return gpu.CopyToDevice(this.array2d);
         }
         */
-        public void CopyToGPU(Accelerator accelerator)
+        public void CopyToGPU()
         {
-            using (var buffer = accelerator.Allocate<double>(array2d.GetLength(0) + 32, array2d.GetLength(1)))
-            {
-                //copy to accelerator
-                buffer.CopyFrom(array2d, new Index2(), new Index2(32, 0), new Index2(array2d.GetLength(0), array2d.GetLength(1)));
-            }
+            var bufferTemp = HardwareAcceleratorManager.GPUAccelerator.Allocate<double>(array2d.GetLength(0) + 32, array2d.GetLength(1));
+            //copy to accelerator
+            bufferTemp.CopyFrom(array2d, new Index2(), new Index2(32, 0), new Index2(array2d.GetLength(0), array2d.GetLength(1)));
+            buffer = bufferTemp;
         }
     }
 }

@@ -7,7 +7,7 @@ namespace FastMatrixTest
     {
         static void Main(string[] args)
         {
-            int size = 12000;
+            int size = 1000;
             Random random = new Random();
             double[][] array = new double[size][];
             for (int i = 0; i < array.Length; i++)
@@ -37,7 +37,8 @@ namespace FastMatrixTest
             //Console.WriteLine();
             //bruh.Print();
             //Console.WriteLine();
-
+            bruh.CopyToGPU();
+            help.CopyToGPU();
             FastMatrixOperation.Add.CPU(bruh, help);
             FastMatrixOperation.Add.CPUParallel(bruh, help);
             FastMatrixOperation.Add.GPU(bruh, help);
