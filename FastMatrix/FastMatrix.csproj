@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ILGPU" Version="0.8.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Xaml" Version="4.0.0.1" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="4.7.0" />
+  </ItemGroup>
+
+	<Target Name="RemoveDesignTimeFacadesBeforeSGen" BeforeTargets="GenerateSerializationAssemblies">
+		<ItemGroup>
+			<ReferencePath Remove="@(_DesignTimeFacadeAssemblies_Names->'%(OriginalIdentity)')" />
+		</ItemGroup>
+		<Message Importance="normal" Text="Removing DesignTimeFacades from ReferencePath before running SGen." />
+	</Target>
+
+	<Target Name="ReAddDesignTimeFacadesBeforeSGen" AfterTargets="GenerateSerializationAssemblies">
+		<ItemGroup>
+			<ReferencePath Include="@(_DesignTimeFacadeAssemblies_Names->'%(OriginalIdentity)')" />
+		</ItemGroup>
+		<Message Importance="normal" Text="Adding back DesignTimeFacades from ReferencePath now that SGen has run." />
+	</Target>
+
+</Project>
