@@ -1,5 +1,6 @@
 ﻿using ILGPU;
 using ILGPU.Runtime;
+using ILGPU.Runtime.CPU;
 using ILGPU.Runtime.Cuda;
 using ILGPU.Runtime.OpenCL;
 
@@ -37,7 +38,6 @@ namespace FastMatrixOperations
         {
             if (gpuAccelerator != null)
                 return;
-
             if (CudaAccelerator.CudaAccelerators.Length > 0)
             {
                 if (context == null)
@@ -52,7 +52,15 @@ namespace FastMatrixOperations
                     if (context == null)
                         context = new Context();
                     gpuAccelerator = Accelerator.Create(context, aid);
+                    return;
                 }
+            }
+            if(CPUAccelerator.CPUAccelerators.Length > 0)
+            {
+                if (context == null)
+                    context = new Context();
+                gpuAccelerator = Accelerator.Create(context, CPUAccelerator.CPUAccelerators[0]);
+                return;
             }
         }
 

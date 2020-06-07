@@ -147,22 +147,25 @@ namespace FastMatrixOperations
             return columnData;
         }
 
-        /*
         /// <summary>
-        /// Internal use. Copies the array for this matrix to the GPU.
+        /// Copies the matrix to GPU memory.
         /// </summary>
-        /// <param name="gpu">The GPU to copy the array to.</param>
-        /// <returns>The copied array (in GPU memory)</returns>
-        public double[,] CopyToGPU(GPGPU gpu)
-        {
-            return gpu.CopyToDevice(this.array2d);
-        }
-        */
+        /// <remarks>You can run multiple of copies on bacground threads to speed up operations.</remarks>
         public void CopyToGPU()
         {
-            var bufferTemp = HardwareAcceleratorManager.GPUAccelerator.Allocate<double>(array2d.GetLength(0) + 32, array2d.GetLength(1));
+            if(HardwareAcceleratorManager.GPUAccelerator.MemorySize < GetSize(0) * GetSize(1) * sizeof(double))
+            {
+                Console.WriteLine("Out of memory");
+                throw new OutOfMemoryException("The GPU doesn't have enough memory to house an array of this size!");
+            }
+            var stream = HardwareAcceleratorManager.GPUAccelerator.CreateStream();
+            var bufferTemp = HardwareAcceleratorManager.GPUAccelerator.Allocate<double>(GetSize(0), GetSize(1));
             //copy to accelerator
-            bufferTemp.CopyFrom(array2d, new Index2(), new Index2(32, 0), new Index2(array2d.GetLength(0), array2d.GetLength(1)));
+            bufferTemp.CopyFrom(stream, array2d, Index2.Zero, Index2.Zero, new Index2(GetSize(0), GetSize(1)));
+            if(HardwareAcceleratorManager.GPUAccelerator.AcceleratorType != AcceleratorType.Cuda)
+            {
+                stream.Synchronize();
+            }
             buffer = bufferTemp;
         }
     }

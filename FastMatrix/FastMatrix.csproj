@@ -11,7 +11,6 @@
   <ItemGroup>
     <PackageReference Include="ILGPU" Version="0.8.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Xaml" Version="4.0.0.1" />
     <PackageReference Include="System.ComponentModel.Composition" Version="4.7.0" />
   </ItemGroup>
 
