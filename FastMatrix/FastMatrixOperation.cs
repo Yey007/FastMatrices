@@ -8,7 +8,7 @@ using ILGPU.Runtime.OpenCL;
 
 namespace FastMatrixOperations
 {
-
+    //TODO: Fix the class structure dumpster fire
     /// <summary>
     /// Contains operation classes.
     /// </summary>
@@ -337,7 +337,6 @@ namespace FastMatrixOperations
             /// <param name="one">First matrix</param>
             /// <param name="two">Second matrix</param>
             /// <returns>The result of the multiplication.</returns>
-            /// <remarks>Appears to be advantageous for multiplying matrices smaller than 200 x 200</remarks>
             public static FastMatrix CPU(FastMatrix one, FastMatrix two)
             {
                 Stopwatch watch = Stopwatch.StartNew();
@@ -362,12 +361,11 @@ namespace FastMatrixOperations
             }
 
             /// <summary>
-            /// Multiplies two matrices using a single thread on the CPU.
+            /// Multiplies two matrices using multiple threads on the CPU.
             /// </summary>
             /// <param name="one">First matrix</param>
             /// <param name="two">Second matrix</param>
             /// <returns>The result of the multiplication.</returns>
-            /// <remarks>Appears to be advantageous for multiplying matrices larger than 200 x 200</remarks>
             public static FastMatrix CPUParallel(FastMatrix one, FastMatrix two)
             {
                 Stopwatch watch = Stopwatch.StartNew();
@@ -390,6 +388,12 @@ namespace FastMatrixOperations
                 return returnMatrix;
             }
 
+            /// <summary>
+            /// Multiplies two matrices using multiple threads on the GPU.
+            /// </summary>
+            /// <param name="one">First matrix</param>
+            /// <param name="two">Second matrix</param>
+            /// <returns>The result of the multiplication.</returns>
             public static FastMatrix GPU(FastMatrix one, FastMatrix two)
             {
                 Stopwatch watch = Stopwatch.StartNew();
@@ -424,29 +428,7 @@ namespace FastMatrixOperations
                 //do as mutch stuff as possible here
                 //create kernel
                 Accelerator accelerator = HardwareAcceleratorManager.GPUAccelerator;
-                Action<KernelConfig, ArrayView2D<double>, ArrayView2D<double>, ArrayView2D<double>> kernel;
-                if (accelerator.AcceleratorType == AcceleratorType.Cuda)
-                {
-                    kernel = accelerator.LoadStreamKernel<ArrayView2D<double>, ArrayView2D<double>, ArrayView2D<double>>(GPUMult);
-                }
-                else
-                {
-                    kernel = accelerator.LoadStreamKernel<ArrayView2D<double>, ArrayView2D<double>, ArrayView2D<double>>(GPUMultFallback);
-                }
-
-                //config
-                int groupSize = accelerator.MaxNumThreadsPerGroup;
-                SharedMemoryConfig memoryConfig;
-                KernelConfig kernelConfig;
-                if (accelerator.AcceleratorType == AcceleratorType.Cuda)
-                {
-                    memoryConfig = SharedMemoryConfig.RequestDynamic<double>(groupSize);
-                    //config = SharedMemoryConfig.Empty;
-                }
-                else
-                {
-                    memoryConfig = SharedMemoryConfig.Empty;
-                }
+                var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<double>, ArrayView2D<double>, ArrayView2D<double>>(GPUMult);
 
                 var bufferResult = HardwareAcceleratorManager.GPUAccelerator.Allocate<double>(one.GetSize(0), two.GetSize(1));
 
@@ -465,10 +447,7 @@ namespace FastMatrixOperations
                 watch2.Reset();
                 watch2.Start();
 
-                Console.WriteLine(bufferResult.Length);
-                Console.WriteLine(groupSize);
-                kernelConfig = ((bufferResult.Length + groupSize - 1) / groupSize, groupSize, memoryConfig);
-                kernel(kernelConfig, bufferOne.View, bufferTwo.View, bufferResult.View);
+                kernel(bufferResult.Extent, bufferOne.View, bufferTwo.View, bufferResult.View);
 
                 accelerator.Synchronize();
                 Console.WriteLine("Kernel operation " + watch2.ElapsedMilliseconds + "ms");
@@ -478,24 +457,16 @@ namespace FastMatrixOperations
                 return returnMatrix;
             }
 
-            private static void GPUMult(ArrayView2D<double> aView, ArrayView2D<double> bView, ArrayView2D<double> resView)
+            private static void GPUMult(Index2 index, ArrayView2D<double> aView, ArrayView2D<double> bView, ArrayView2D<double> resView)
             {
-                //x, y, z defines row first matrix, column second matrix, element
-                int x = Group.IdxX;
-                int y = Group.IdxY;
-                int z = Group.IdxZ;
-                int globalX = Group.DimX * Grid.IdxX + x;
-                int globalY = Group.DimY * Grid.IdxY + y;
-                var shared = SharedMemory.GetDynamic<double>().As2DView(Group.DimX, Group.DimY);
-                shared[x, y] += aView[x, z] * bView[z, y];
-                Group.Barrier();
-                resView[globalX, globalY] = shared[x, y];
-            }
-
-            private static void GPUMultFallback(ArrayView2D<double> aView, ArrayView2D<double> bView, ArrayView2D<double> resView)
-            {
-
-
+                int x = index.X; //matrix one row
+                int y = index.Y; //matrix two column
+                double sum = 0;
+                for (int i = 0; i < aView.Height; i++)
+                {
+                    sum += aView[x, i] * bView[i, y];
+                }
+                resView[index] = sum;
             }
         }
 

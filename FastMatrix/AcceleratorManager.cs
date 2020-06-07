@@ -59,7 +59,7 @@ namespace FastMatrixOperations
             {
                 if (context == null)
                     context = new Context();
-                gpuAccelerator = Accelerator.Create(context, CPUAccelerator.CPUAccelerators[0]);
+                gpuAccelerator = new CPUAccelerator(context, 1);
                 return;
             }
         }
