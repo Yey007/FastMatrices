@@ -6,6 +6,9 @@ using FastMatrixOperations.Internal;
 
 namespace FastMatrixOperations
 {
+    /// <summary>
+    /// The base class that all operators derive from
+    /// </summary>
     public abstract class MatrixOperatorBase
     {
         public abstract FastMatrix Add(FastMatrix one, FastMatrix two);
@@ -24,8 +27,17 @@ namespace FastMatrixOperations
         }
     }
 
+    /// <summary>
+    /// Accesses the CPU for operations
+    /// </summary>
     public class CPUOperator : MatrixOperatorBase
     {
+        /// <summary>
+        /// Adds two matrices on the CPU using a single thread
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the addition</returns>
         public override FastMatrix Add(FastMatrix one, FastMatrix two)
         {
             if(one == null || two == null)
@@ -47,6 +59,12 @@ namespace FastMatrixOperations
             return fastMatrix;
         }
 
+        /// <summary>
+        /// Multiplies two matrices on the CPU using a single thread
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the multiplication</returns>
         public override FastMatrix Multiply(FastMatrix one, FastMatrix two)
         {
             if (one == null || two == null)
@@ -70,6 +88,12 @@ namespace FastMatrixOperations
             return returnMatrix;
         }
 
+        /// <summary>
+        /// Subtracts two matrices on the CPU using a single thread
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the subtraction (one - two)</returns>
         public override FastMatrix Subtract(FastMatrix one, FastMatrix two)
         {
             if (one == null || two == null)
@@ -92,6 +116,11 @@ namespace FastMatrixOperations
             return fastMatrix;
         }
 
+        /// <summary>
+        /// Transposes a matrix on the CPU using a single thread
+        /// </summary>
+        /// <param name="matrix">The matrix</param>
+        /// <returns>The result of the transpose</returns>
         public override FastMatrix Transpose(FastMatrix matrix)
         {
             if (matrix == null)
@@ -110,8 +139,17 @@ namespace FastMatrixOperations
         }
     }
 
+    /// <summary>
+    /// Accesses the CPU for operations, but operations run using multiple threads
+    /// </summary>
     public class ParallelOperator : MatrixOperatorBase
     {
+        /// <summary>
+        /// Adds two matrices on the CPU using multiple threads
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the addition</returns>
         public override FastMatrix Add(FastMatrix one, FastMatrix two)
         {
             if (one == null || two == null)
@@ -133,6 +171,12 @@ namespace FastMatrixOperations
             return fastMatrix;
         }
 
+        /// <summary>
+        /// Multiplies two matrices on the CPU using multiple threads
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the multiplication</returns>
         public override FastMatrix Multiply(FastMatrix one, FastMatrix two)
         {
             if (one == null || two == null)
@@ -156,6 +200,12 @@ namespace FastMatrixOperations
             return returnMatrix;
         }
 
+        /// <summary>
+        /// Subtracts two matrices on the CPU using multiple threads
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the subtraction (one - two)</returns>
         public override FastMatrix Subtract(FastMatrix one, FastMatrix two)
         {
             if (one == null || two == null)
@@ -177,6 +227,11 @@ namespace FastMatrixOperations
             return fastMatrix;
         }
 
+        /// <summary>
+        /// Transposes a matrix on the CPU using multiple threads
+        /// </summary>
+        /// <param name="matrix">The matrix</param>
+        /// <returns>The transposed matrix</returns>
         public override FastMatrix Transpose(FastMatrix matrix)
         {
             if (matrix == null)
@@ -197,14 +252,33 @@ namespace FastMatrixOperations
         }
     }
 
+    /// <summary>
+    /// Accesses the GPU for operations
+    /// </summary>
+    /// <remarks>
+    /// Note: This is not always faster. There is a lot of overhead in copying information. <br></br>
+    /// You can mitigate this overhead by starting copies early using <see cref="FastMatrixOperations.FastMatrix.CopyToGPU"/> <br></br>
+    /// and initializing this class early.
+    /// </remarks>
     public class GPUOperator : MatrixOperatorBase
     {
         private Accelerator accelerator = HardwareAcceleratorManager.GPUAccelerator;
+
+        /// <summary>
+        /// Initializes the GPUOperator by starting the init process for the manager.<br></br>
+        /// All functions automatically complete the process if it's not done by the time they're called.
+        /// </summary>
         public GPUOperator()
         {
             HardwareAcceleratorManager.StartInit();
         }
 
+        /// <summary>
+        /// Adds two matrices on the GPU
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the addition</returns>
         public override FastMatrix Add(FastMatrix one, FastMatrix two)
         {
             if (one == null || two == null)
@@ -258,6 +332,12 @@ namespace FastMatrixOperations
             return returnMatrix;
         }
 
+        /// <summary>
+        /// Multiplies two matrices on the GPU
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the multiplication</returns>
         public override FastMatrix Multiply(FastMatrix one, FastMatrix two)
         {
             if (one == null || two == null)
@@ -297,6 +377,12 @@ namespace FastMatrixOperations
             return returnMatrix;
         }
 
+        /// <summary>
+        /// Subtracts two matrices on the GPU
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the subtraction (one - two) </returns>
         public override FastMatrix Subtract(FastMatrix one, FastMatrix two)
         {
             if (one == null || two == null)
@@ -350,6 +436,11 @@ namespace FastMatrixOperations
             return returnMatrix;
         }
 
+        /// <summary>
+        /// Transposes a matrix on the GPU
+        /// </summary>
+        /// <param name="matrix">The matrix</param>
+        /// <returns>The transposed matrix</returns>
         public override FastMatrix Transpose(FastMatrix matrix)
         {
             if (matrix == null)
@@ -374,6 +465,7 @@ namespace FastMatrixOperations
             return new FastMatrix(resultBuffer.GetAs2DArray());
         }
 
+        //kernels
         #region Kernels
         private static void GPUAdd(ArrayView2D<double> aView, ArrayView2D<double> bView, ArrayView2D<double> resView)
         {

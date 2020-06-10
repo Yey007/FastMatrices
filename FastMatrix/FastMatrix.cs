@@ -10,6 +10,7 @@ namespace FastMatrixOperations
     /// <summary>
     /// A class that makes matrix operations easy and fast
     /// </summary>
+    /// <remarks>See <seealso cref="FastMatrixOperations.MatrixOperatorBase"/> and children for doing operations</remarks>
     public class FastMatrix
     {
         /// <summary>
@@ -127,6 +128,11 @@ namespace FastMatrixOperations
             return array2d.GetLength(dimension);
         }
 
+        /// <summary>
+        /// Gets a specific row of the matrix as an array
+        /// </summary>
+        /// <param name="row">Which row to get (0-based top to bottom)</param>
+        /// <returns>The row as an array</returns>
         public double[] GetRow(int row)
         {
             double[] rowData = new double[GetSize(1)];
@@ -138,6 +144,11 @@ namespace FastMatrixOperations
             return rowData;
         }
 
+        /// <summary>
+        /// Gets a specific column of the matrix as an array
+        /// </summary>
+        /// <param name="row">Which column to get (0-based left to right)</param>
+        /// <returns>The column as an array</returns>
         public double[] GetColumn(int column)
         {
             double[] columnData = new double[GetSize(0)];
@@ -153,13 +164,19 @@ namespace FastMatrixOperations
         /// Copies the matrix to GPU memory.
         /// </summary>
         /// <returns>The stream associated with copying the matrix</returns>
-        /// <remarks>Runs asynchronously</remarks>
+        /// <remarks>
+        /// Runs asynchronously.
+        /// You can wait for the task to finish by calling <seealso cref="WaitForCopy"/>
+        /// </remarks>
         public void CopyToGPU()
         {
             copyTask = new Task(CopyToGPUWorker);
             copyTask.Start();
         }
 
+        /// <summary>
+        /// The actual function ran from for <see cref="CopyToGPU"/>
+        /// </summary>
         private void CopyToGPUWorker()
         {
             if(HardwareAcceleratorManager.GPUAccelerator.MemorySize < GetSize(0) * GetSize(1) * sizeof(double))
@@ -196,16 +213,30 @@ namespace FastMatrixOperations
             }
         }
 
+        /// <summary>
+        /// Waits for <see cref="CopyToGPU"/> to finsih if running
+        /// </summary>
         public void WaitForCopy()
         {
-            copyTask.Wait();
+            if (copyTask != null && copyTask.Status == TaskStatus.Running)
+            {
+                copyTask.Wait();
+            }
         }
 
+        /// <summary>
+        /// Override for default equals function
+        /// </summary>
         public override bool Equals(object obj)
         {
             return this.Equals(obj as FastMatrix);
         }
 
+        /// <summary>
+        /// Checks if this matrix is equal to another by looking at their contents
+        /// </summary>
+        /// <param name="matrix">The matrix to compare to</param>
+        /// <returns>A bool representing wheter they are equal or not</returns>
         public bool Equals(FastMatrix matrix)
         {
             // If parameter is null, return false.
@@ -246,11 +277,21 @@ namespace FastMatrixOperations
             return true;
         }
 
+        /// <summary>
+        /// Hashes the array based on it's contents
+        /// </summary>
+        /// <returns>An int representing the hash code</returns>
         public override int GetHashCode()
         {
             return HashCode.Combine(array2d);
         }
 
+        /// <summary>
+        /// Operator for comparing two matrices
+        /// </summary>
+        /// <param name="one">First matrix</param>
+        /// <param name="two">Second matrix</param>
+        /// <returns>Wheter they are equal or not</returns>
         public static bool operator ==(FastMatrix one, FastMatrix two)
         {
             // Check for null on left side.
@@ -269,9 +310,12 @@ namespace FastMatrixOperations
             return one.Equals(two);
         }
 
-        public static bool operator !=(FastMatrix lhs, FastMatrix rhs)
+        /// <summary>
+        /// Basically just <see cref="operator ==(FastMatrix, FastMatrix)"/> but uno reverse
+        /// </summary>
+        public static bool operator !=(FastMatrix one, FastMatrix two)
         {
-            return !(lhs == rhs);
+            return !(one == two);
         }
     }
 }
