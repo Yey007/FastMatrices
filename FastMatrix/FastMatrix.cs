@@ -2,9 +2,8 @@
 using ILGPU.Runtime;
 using ILGPU.Runtime.CPU;
 using System;
-using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
+using FastMatrixOperations.Internal;
 
 namespace FastMatrixOperations
 {
@@ -200,6 +199,79 @@ namespace FastMatrixOperations
         public void WaitForCopy()
         {
             copyTask.Wait();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as FastMatrix);
+        }
+
+        public bool Equals(FastMatrix matrix)
+        {
+            // If parameter is null, return false.
+            if (Object.ReferenceEquals(matrix, null))
+            {
+                return false;
+            }
+
+            // Optimization for a common success case.
+            if (Object.ReferenceEquals(this, matrix))
+            {
+                return true;
+            }
+
+            // If run-time types are not exactly the same, return false.
+            if (this.GetType() != matrix.GetType())
+            {
+                return false;
+            }
+
+            //if sizes aren't same return false
+            if ((GetSize(0) != matrix.GetSize(0)) || (GetSize(1) != matrix.GetSize(1)))
+            {
+                return false;
+            }
+
+            for(int i = 0; i < GetSize(0); i++)
+            {
+                for (int j = 0; j < GetSize(1); j++)
+                {
+                    if(matrix[i, j] != this[i, j])
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(array2d);
+        }
+
+        public static bool operator ==(FastMatrix one, FastMatrix two)
+        {
+            // Check for null on left side.
+            if (Object.ReferenceEquals(one, null))
+            {
+                if (Object.ReferenceEquals(two, null))
+                {
+                    // null == null = true.
+                    return true;
+                }
+
+                // Only the left side is null.
+                return false;
+            }
+            // Equals handles case of null on right side.
+            return one.Equals(two);
+        }
+
+        public static bool operator !=(FastMatrix lhs, FastMatrix rhs)
+        {
+            return !(lhs == rhs);
         }
     }
 }

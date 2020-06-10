@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FastMatrixOperations
+namespace FastMatrixOperations.Internal
 {
     /// <summary>
     /// Thrown when either

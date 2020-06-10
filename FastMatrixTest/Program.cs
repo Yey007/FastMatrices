@@ -9,10 +9,13 @@ namespace FastMatrixTest
     {
         static void Main(string[] args)
         {
-            Stopwatch watch = Stopwatch.StartNew();
+            Stopwatch watch = new Stopwatch();
+            CPUOperator cpu = new CPUOperator();
+            ParallelOperator parallel = new ParallelOperator();
+            GPUOperator gpu = new GPUOperator();
 
-            int size = 5;
-            int size2 = 5;
+            int size = 500;
+            int size2 = 500;
             Random random = new Random();
             double[][] array = new double[size][];
             for (int i = 0; i < array.Length; i++)
@@ -38,25 +41,94 @@ namespace FastMatrixTest
 
             FastMatrix help = new FastMatrix(arr);
 
-            //bruh.CopyToGPU();
-            //help.CopyToGPU();
+            watch.Start();
 
-            //bruh.WaitForCopy();
-            //help.WaitForCopy();
-            bruh.Print();
-            Console.WriteLine();
-            
-            FastMatrixOperation.Transpose.CPUParallel(bruh).Print();
-            Console.WriteLine();
-            FastMatrixOperation.Transpose.GPU(bruh).Print();
+            ////////////
+            //multiply//
+            ////////////
+            Console.WriteLine("Multiplying");
+            var multRes1 = cpu.Multiply(bruh, help);
+            Console.WriteLine("CPU took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
 
-            Console.WriteLine("Runtime was: " + watch.ElapsedMilliseconds + "ms");
+            var multRes2 = parallel.Multiply(bruh, help);
+            Console.WriteLine("Parallel took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            var multRes3 = gpu.Multiply(bruh, help);
+            Console.WriteLine("GPU took " + watch.ElapsedMilliseconds + "ms");
+
+            Debug.Assert(multRes1 == multRes2);
+            Debug.Assert(multRes3 == multRes2);
+            Console.WriteLine("Enter for next phase");
             Console.ReadLine();
 
-            //FastMatrixOperation.Multiply.CPU(bruh, help);
-            //FastMatrixOperation.Multiply.CPUParallel(bruh, help);
-            //FastMatrixOperation.Multiply.GPU(bruh, help);
+            ////////
+            //add//
+            ///////
+            Console.WriteLine("Adding");
+            watch.Restart();
+            var addRes1 = cpu.Add(bruh, help);
+            Console.WriteLine("CPU took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            var addRes2 = parallel.Add(bruh, help);
+            Console.WriteLine("Parallel took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            var addRes3 = gpu.Add(bruh, help);
+            Console.WriteLine("GPU took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            Debug.Assert(multRes1 == multRes2);
+            Debug.Assert(multRes3 == multRes2);
+            Console.WriteLine("Enter for next phase");
             Console.ReadLine();
+
+            ////////////
+            //subtract//
+            ////////////
+            Console.WriteLine("Subtracting");
+            watch.Restart();
+            var subRes1 = cpu.Subtract(bruh, help);
+            Console.WriteLine("CPU took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            var subRes2 = parallel.Subtract(bruh, help);
+            Console.WriteLine("Parallel took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            var subRes3 = gpu.Subtract(bruh, help);
+            Console.WriteLine("GPU took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            Debug.Assert(multRes1 == multRes2);
+            Debug.Assert(multRes3 == multRes2);
+            Console.WriteLine("Enter for next phase");
+            Console.ReadLine();
+
+            /////////////
+            //transpose//
+            /////////////
+            Console.WriteLine("Transposing");
+            watch.Restart();
+            var transRes1 = cpu.Transpose(bruh);
+            Console.WriteLine("CPU took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            var transRes2 = parallel.Transpose(bruh);
+            Console.WriteLine("Parallel took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            var transRes3 = gpu.Transpose(bruh);
+            Console.WriteLine("GPU took " + watch.ElapsedMilliseconds + "ms");
+            watch.Restart();
+
+            Debug.Assert(multRes1 == multRes2);
+            Debug.Assert(multRes3 == multRes2);
+            Console.WriteLine("Enter to finish");
+            Console.ReadLine();
+            return;
         }
     }
 }

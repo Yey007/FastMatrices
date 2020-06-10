@@ -5,7 +5,7 @@ using ILGPU.Runtime.Cuda;
 using ILGPU.Runtime.OpenCL;
 using System.Threading.Tasks;
 
-namespace FastMatrixOperations
+namespace FastMatrixOperations.Internal
 {
     /// <summary>
     /// The hardware accelerator manager.
@@ -44,7 +44,6 @@ namespace FastMatrixOperations
         {
             if (gpuAccelerator != null)
                 return;
-            /*
             if (CudaAccelerator.CudaAccelerators.Length > 0)
             {
                 if (context == null)
@@ -52,7 +51,6 @@ namespace FastMatrixOperations
                 gpuAccelerator = Accelerator.Create(context, CudaAccelerator.CudaAccelerators[0]);
                 return;
             }
-            */
             foreach (CLAcceleratorId aid in CLAccelerator.CLAccelerators)
             {
                 if (aid.DeviceType == ILGPU.Runtime.OpenCL.API.CLDeviceType.CL_DEVICE_TYPE_GPU)
@@ -79,7 +77,7 @@ namespace FastMatrixOperations
             init.Start();
         }
 
-        public static void FinishInit()
+        private static void FinishInit()
         {
             init.Wait();
         }
