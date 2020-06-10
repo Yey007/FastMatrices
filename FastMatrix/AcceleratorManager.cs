@@ -3,6 +3,7 @@ using ILGPU.Runtime;
 using ILGPU.Runtime.CPU;
 using ILGPU.Runtime.Cuda;
 using ILGPU.Runtime.OpenCL;
+using System.Threading.Tasks;
 
 namespace FastMatrixOperations
 {
@@ -11,6 +12,7 @@ namespace FastMatrixOperations
     /// </summary>
     public static class HardwareAcceleratorManager
     {
+        private static Task init;
         /// <summary>
         /// Gets the context.
         /// </summary>
@@ -25,6 +27,10 @@ namespace FastMatrixOperations
         {
             get
             {
+                if(init != null && !init.IsCompleted)
+                {
+                    init.Wait();
+                }
                 getGPUAccelerator();
                 return gpuAccelerator;
             }
@@ -38,6 +44,7 @@ namespace FastMatrixOperations
         {
             if (gpuAccelerator != null)
                 return;
+            /*
             if (CudaAccelerator.CudaAccelerators.Length > 0)
             {
                 if (context == null)
@@ -45,6 +52,7 @@ namespace FastMatrixOperations
                 gpuAccelerator = Accelerator.Create(context, CudaAccelerator.CudaAccelerators[0]);
                 return;
             }
+            */
             foreach (CLAcceleratorId aid in CLAccelerator.CLAccelerators)
             {
                 if (aid.DeviceType == ILGPU.Runtime.OpenCL.API.CLDeviceType.CL_DEVICE_TYPE_GPU)
@@ -55,13 +63,25 @@ namespace FastMatrixOperations
                     return;
                 }
             }
-            if(CPUAccelerator.CPUAccelerators.Length > 0)
+            if (CPUAccelerator.CPUAccelerators.Length > 0)
             {
                 if (context == null)
                     context = new Context();
                 gpuAccelerator = new CPUAccelerator(context, 1);
                 return;
             }
+
+        }
+
+        public static void StartInit()
+        {
+            init = new Task(getGPUAccelerator);
+            init.Start();
+        }
+
+        public static void FinishInit()
+        {
+            init.Wait();
         }
 
         /// <summary>

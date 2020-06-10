@@ -1,7 +1,10 @@
 ﻿using ILGPU;
 using ILGPU.Runtime;
+using ILGPU.Runtime.CPU;
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FastMatrixOperations
 {
@@ -17,9 +20,9 @@ namespace FastMatrixOperations
         /// This is a two dimensional array as opposed to a jagged array, which ensures that all elements have the same length.
         /// <para>See <a href="https://stackoverflow.com/questions/4648914/why-we-have-both-jagged-array-and-multidimensional-array">this post</a> for more details.</para>
         /// </remarks>
-        public double[,] array2d;
-
-        public MemoryBuffer2D<double> buffer;
+        private double[,] array2d;
+        public MemoryBuffer2D<double> buffer { get; private set; }
+        private Task copyTask;
 
         /// <summary>
         /// Indexer to make querries look nicer
@@ -150,23 +153,53 @@ namespace FastMatrixOperations
         /// <summary>
         /// Copies the matrix to GPU memory.
         /// </summary>
-        /// <remarks>You can run multiple of copies on bacground threads to speed up operations.</remarks>
+        /// <returns>The stream associated with copying the matrix</returns>
+        /// <remarks>Runs asynchronously</remarks>
         public void CopyToGPU()
+        {
+            copyTask = new Task(CopyToGPUWorker);
+            copyTask.Start();
+        }
+
+        private void CopyToGPUWorker()
         {
             if(HardwareAcceleratorManager.GPUAccelerator.MemorySize < GetSize(0) * GetSize(1) * sizeof(double))
             {
                 Console.WriteLine("Out of memory");
                 throw new OutOfMemoryException("The GPU doesn't have enough memory to house an array of this size!");
             }
-            var stream = HardwareAcceleratorManager.GPUAccelerator.CreateStream();
-            var bufferTemp = HardwareAcceleratorManager.GPUAccelerator.Allocate<double>(GetSize(0), GetSize(1));
-            //copy to accelerator
-            bufferTemp.CopyFrom(stream, array2d, Index2.Zero, Index2.Zero, new Index2(GetSize(0), GetSize(1)));
-            if(HardwareAcceleratorManager.GPUAccelerator.AcceleratorType != AcceleratorType.Cuda)
+
+            var accelerator = HardwareAcceleratorManager.GPUAccelerator;
+
+            if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
+
+
+                var CPUAccelerator = new CPUAccelerator(accelerator.Context);
+                var stream = accelerator.CreateStream();
+                var pinnedCPUBuffer = CPUAccelerator.Allocate<double>(new Index2(GetSize(0), GetSize(1)));
+                buffer = accelerator.Allocate<double>(pinnedCPUBuffer.Extent);
+
+                //copy to CPU buffer
+                pinnedCPUBuffer.CopyFrom(array2d, Index2.Zero, Index2.Zero, pinnedCPUBuffer.Extent);
+
+                //copy to GPU
+                lock (buffer)
+                {
+                    buffer.CopyFrom(stream, pinnedCPUBuffer, Index2.Zero);
+                }
                 stream.Synchronize();
             }
-            buffer = bufferTemp;
+            else
+            {
+                buffer = accelerator.Allocate<double>(GetSize(0), GetSize(1));
+                buffer.CopyFrom(array2d, Index2.Zero, Index2.Zero, buffer.Extent);
+            }
+        }
+
+        public void WaitForCopy()
+        {
+            copyTask.Wait();
         }
     }
 }
