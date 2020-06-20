@@ -258,20 +258,10 @@ namespace FastMatrixOperations
     /// <remarks>
     /// Note: This is not always faster. There is a lot of overhead in copying information. <br></br>
     /// You can mitigate this overhead by starting copies early using <see cref="FastMatrixOperations.FastMatrix.CopyToGPU"/> <br></br>
-    /// and initializing this class early.
     /// </remarks>
     public class GPUOperator : MatrixOperatorBase
     {
         private Accelerator accelerator = HardwareAcceleratorManager.GPUAccelerator;
-
-        /// <summary>
-        /// Initializes the GPUOperator by starting the init process for the manager.<br></br>
-        /// All functions automatically complete the process if it's not done by the time they're called.
-        /// </summary>
-        public GPUOperator()
-        {
-            HardwareAcceleratorManager.StartInit();
-        }
 
         /// <summary>
         /// Adds two matrices on the GPU

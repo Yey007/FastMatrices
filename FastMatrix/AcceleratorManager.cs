@@ -71,16 +71,6 @@ namespace FastMatrixOperations.Internal
 
         }
 
-        public static void StartInit()
-        {
-            init = new Task(getGPUAccelerator);
-            init.Start();
-        }
-
-        private static void FinishInit()
-        {
-            init.Wait();
-        }
 
         /// <summary>
         /// Is a gpu available?

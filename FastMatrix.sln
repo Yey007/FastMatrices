@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30105.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastMatrix", "FastMatrix\FastMatrix.csproj", "{F562DF2E-8DCC-4CF2-8334-2F4E40B3923C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastMatrix", "FastMatrix\FastMatrix.csproj", "{F562DF2E-8DCC-4CF2-8334-2F4E40B3923C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastMatrixTest", "FastMatrixTest\FastMatrixTest.csproj", "{9C2B0CEA-95D4-4C7B-9AB0-6D6A5B9CB310}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastMatrixOperations.Tests", "FastMatrixOperations.Tests\FastMatrixOperations.Tests.csproj", "{A508803D-7168-4F30-B7C3-F822AB84B27E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{F562DF2E-8DCC-4CF2-8334-2F4E40B3923C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F562DF2E-8DCC-4CF2-8334-2F4E40B3923C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F562DF2E-8DCC-4CF2-8334-2F4E40B3923C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C2B0CEA-95D4-4C7B-9AB0-6D6A5B9CB310}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C2B0CEA-95D4-4C7B-9AB0-6D6A5B9CB310}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C2B0CEA-95D4-4C7B-9AB0-6D6A5B9CB310}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C2B0CEA-95D4-4C7B-9AB0-6D6A5B9CB310}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A508803D-7168-4F30-B7C3-F822AB84B27E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A508803D-7168-4F30-B7C3-F822AB84B27E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A508803D-7168-4F30-B7C3-F822AB84B27E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A508803D-7168-4F30-B7C3-F822AB84B27E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
