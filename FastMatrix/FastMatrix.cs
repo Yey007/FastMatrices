@@ -13,10 +13,11 @@ namespace FastMatrixOperations
     /// </summary>
     /// <typeparam name="T">The type stored in the fast matrix. It must define operators for the
     /// operations you wish to use (i.e. if you want to use the 
-    /// <see cref="MatrixOperatorBase{T}.Add(FastMatrix{T}, FastMatrix{T})"/> functionality, the '+' operator
-    /// must be defined.</typeparam>
+    /// <see cref="MatrixOperatorBase{T}.Add(FastMatrix{T}, FastMatrix{T})"/> functionality, 
+    /// the '+' operator must be defined.</typeparam>
     /// <remarks>
-    /// See <seealso cref="FastMatrixOperations.MatrixOperatorBase{T}"/> and children for doing operations.
+    /// See <seealso cref="FastMatrixOperations.MatrixOperatorBase{T}"/> 
+    /// and children for doing operations.
     /// </remarks>
     public class FastMatrix<T>
         where T: unmanaged
@@ -56,7 +57,8 @@ namespace FastMatrixOperations
         /// Creates a new FastMatrix object from a jagged array.
         /// </summary>
         /// <param name="array">The jagged array to be converted into a FastMatrix</param>
-        /// <remarks>Note: The constructor will throw an exception if all inner arrays do not have the same length.</remarks>
+        /// <remarks>Note: The constructor will throw an exception if all 
+        /// inner arrays do not have the same length.</remarks>
         public FastMatrix(T[][] array)
         {
             //make sure size is correct
@@ -64,7 +66,9 @@ namespace FastMatrixOperations
             {
                 if (array[i].Length != array[0].Length)
                 {
-                    throw new BadDimensionException("Array provided for conversion is jagged! Element at index " + i + " has length " + array[i].Length + " while baseline (at index 0) has length " + array[0].Length);
+                    throw new BadDimensionException("Array provided for conversion is jagged! " +
+                        "Element at index " + i + " has length " + array[i].Length + " while " +
+                        "baseline (at index 0) has length " + array[0].Length);
                 }
             }
 
@@ -118,7 +122,8 @@ namespace FastMatrixOperations
         /// <summary>
         /// Get the size of the matrix in a certain dimension.
         /// </summary>
-        /// <param name="dimension">-1 for total length, 0 for the number of rows, 1 for the number of columns.</param>
+        /// <param name="dimension">-1 for total length, 0 for the number of rows, 
+        /// 1 for the number of columns.</param>
         /// <returns></returns>
         public int GetSize(int dimension)
         {
@@ -180,10 +185,11 @@ namespace FastMatrixOperations
         /// </summary>
         private unsafe void CopyToGPUWorker()
         {
-            if(HardwareAcceleratorManager.GPUAccelerator.MemorySize < GetSize(0) * GetSize(1) * sizeof(T))
+            if(HardwareAcceleratorManager.GPUAccelerator.MemorySize < 
+                (GetSize(0) * GetSize(1) * sizeof(T)))
             {
-                Console.WriteLine("Out of memory");
-                throw new OutOfMemoryException("The GPU doesn't have enough memory to house an array of this size!");
+                throw new OutOfMemoryException("The GPU doesn't have enough " +
+                    "memory to house an array of this size!");
             }
 
             var accelerator = HardwareAcceleratorManager.GPUAccelerator;
@@ -192,11 +198,14 @@ namespace FastMatrixOperations
             {
                 var CPUAccelerator = new CPUAccelerator(accelerator.Context);
                 var stream = accelerator.CreateStream();
-                var pinnedCPUBuffer = CPUAccelerator.Allocate<T>(new Index2(GetSize(0), GetSize(1)));
+                var pinnedCPUBuffer = CPUAccelerator.Allocate<T>(
+                    new Index2(GetSize(0), GetSize(1)));
+
                 buffer = accelerator.Allocate<T>(pinnedCPUBuffer.Extent);
 
                 //copy to CPU buffer
-                pinnedCPUBuffer.CopyFrom(array2d, Index2.Zero, Index2.Zero, pinnedCPUBuffer.Extent);
+                pinnedCPUBuffer.CopyFrom(array2d, Index2.Zero, Index2.Zero, 
+                    pinnedCPUBuffer.Extent);
 
                 //copy to GPU
                 lock (buffer)

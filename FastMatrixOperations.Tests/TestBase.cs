@@ -78,7 +78,8 @@ namespace FastMatrixOperations.Tests
         }
 
 
-        protected FastMatrix<T> TransposeOp(MatrixOperatorBase<T> matrixOperator, T[,] allocatedResult, T a, T b)
+        protected FastMatrix<T> TransposeOp(MatrixOperatorBase<T> matrixOperator, 
+            T[,] allocatedResult, T a, T b)
         {
             FastMatrix<T> one = MakeMatrix(size, size, a);
 
