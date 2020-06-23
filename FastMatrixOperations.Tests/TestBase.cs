@@ -3,13 +3,14 @@ using Xunit;
 
 namespace FastMatrixOperations.Tests
 {
-    public class TestBase
+    public class TestBase<T>
+        where T: unmanaged
     {
         protected const int size = 5;
 
-        protected double[,] MakeResult(int rows, int columns, double value)
+        protected T[,] MakeResult(int rows, int columns, T value)
         {
-            double[,] resultArray = new double[rows, columns];
+            T[,] resultArray = new T[rows, columns];
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < columns; j++)
@@ -21,9 +22,9 @@ namespace FastMatrixOperations.Tests
             return resultArray;
         }
 
-        protected FastMatrix MakeMatrix(int rows, int columns, double value)
+        protected FastMatrix<T> MakeMatrix(int rows, int columns, T value)
         {
-            double[,] resultArray = new double[rows, columns];
+            T[,] resultArray = new T[rows, columns];
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < columns; j++)
@@ -32,10 +33,10 @@ namespace FastMatrixOperations.Tests
                 }
             }
 
-            return new FastMatrix(resultArray);
+            return new FastMatrix<T>(resultArray);
         }
 
-        protected void VerifyResults(FastMatrix matrix, double[,] expected)
+        protected void VerifyResults(FastMatrix<T> matrix, T[,] expected)
         {
             Assert.Equal(matrix.GetSize(0), expected.GetLength(0));
             Assert.Equal(matrix.GetSize(1), expected.GetLength(1));
@@ -48,37 +49,42 @@ namespace FastMatrixOperations.Tests
             }
         }
 
-        protected FastMatrix AddOp(MatrixOperatorBase matrixOperator)
+        //expect a + b
+        protected FastMatrix<T> AddOp(MatrixOperatorBase<T> matrixOperator, T a, T b)
         {
-            FastMatrix one = MakeMatrix(size, size, 10);
-            FastMatrix two = MakeMatrix(size, size, 10);
+            FastMatrix<T> one = MakeMatrix(size, size, a);
+            FastMatrix<T> two = MakeMatrix(size, size, b);
 
             return matrixOperator.Add(one, two);
         }
 
-        protected FastMatrix SubtractionOp(MatrixOperatorBase matrixOperator)
+        //expect a - b
+        protected FastMatrix<T> SubtractionOp(MatrixOperatorBase<T> matrixOperator, T a, T b)
         {
-            FastMatrix one = MakeMatrix(size, size, 20);
-            FastMatrix two = MakeMatrix(size, size, 10);
+            FastMatrix<T> one = MakeMatrix(size, size, a);
+            FastMatrix<T> two = MakeMatrix(size, size, b);
 
             return matrixOperator.Subtract(one, two);
         }
 
-        protected FastMatrix MultiplicationOp(MatrixOperatorBase matrixOperator)
+        //expect a*b*size
+        protected FastMatrix<T> MultiplicationOp(MatrixOperatorBase<T> matrixOperator, T a, T b)
         {
 
-            FastMatrix one = MakeMatrix(size, size, 10);
-            FastMatrix two = MakeMatrix(size, size, 10);
+            FastMatrix<T> one = MakeMatrix(size, size, a);
+            FastMatrix<T> two = MakeMatrix(size, size, b);
 
             return matrixOperator.Multiply(one, two);
         }
 
-        protected FastMatrix TransposeOp(MatrixOperatorBase matrixOperator, double[,] allocatedResult)
-        {
-            FastMatrix one = MakeMatrix(size, size, 10);
 
-            one[size - 1, 0] = 5;
-            allocatedResult[0, size - 1] = 5;
+        protected FastMatrix<T> TransposeOp(MatrixOperatorBase<T> matrixOperator, 
+            T[,] allocatedResult, T a, T b)
+        {
+            FastMatrix<T> one = MakeMatrix(size, size, a);
+
+            one[size - 1, 0] = b;
+            allocatedResult[0, size - 1] = b;
 
             return matrixOperator.Transpose(one);
         }
