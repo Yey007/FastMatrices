@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FastMatrix\FastMatrix.csproj" />
+    <ProjectReference Include="..\FastMatrix\FastMatrixOperations.csproj" />
   </ItemGroup>
 
 </Project>

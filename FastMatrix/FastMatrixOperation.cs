@@ -258,68 +258,18 @@ namespace FastMatrixOperations
     /// <summary>
     /// Accesses the GPU for operations
     /// </summary>
+    /// <typeparam name="T">The type this operator operates on.</typeparam>
+    /// <typeparam name="TOperator">The associated operator. This is necessary as the GPU 
+    /// cannot dynamically resolve operations.</typeparam>
     /// <remarks>
     /// Note: This is not always faster. There is a lot of overhead in copying information. <br></br>
     /// You can mitigate this overhead by starting copies early using <see cref="FastMatrixOperations.FastMatrix.CopyToGPU"/> <br></br>
     /// </remarks>
-    public class GPUOperator<T> : MatrixOperatorBase<T>
+    public class GPUOperator<T, TOperator> : MatrixOperatorBase<T>
         where T : unmanaged
+        where TOperator: struct, ITypeOperator<T>
     {
         private Accelerator accelerator = HardwareAcceleratorManager.GPUAccelerator;
-
-        public FastMatrix<int> Add2(FastMatrix<int> one, FastMatrix<int> two)
-        {
-            if (one == null || two == null)
-            {
-                throw new ArgumentNullException();
-            }
-            if ((one.GetSize(0) != two.GetSize(0)) || (one.GetSize(1) != two.GetSize(1)))
-            {
-                throw new BadDimensionException("The matrices to be added do not have the same sizes!");
-            }
-
-            Action<KernelConfig, ArrayView2D<int>, ArrayView2D<int>, ArrayView2D<int>> kernel;
-            int groupSize = accelerator.MaxNumThreadsPerGroup;
-            SharedMemoryConfig config;
-            KernelConfig kernelConfig;
-            MemoryBuffer2D<int> resultBuffer;
-
-            //start tasks
-            if (one.buffer == null)
-            {
-                one.CopyToGPU();
-            }
-
-            if (two.buffer == null)
-            {
-                two.CopyToGPU();
-            }
-
-            if (accelerator.AcceleratorType == AcceleratorType.Cuda)
-            {
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<int>, ArrayView2D<int>, ArrayView2D<int>>(GPUAdd2);
-                config = SharedMemoryConfig.RequestDynamic<int>(groupSize);
-            }
-            else
-            {
-                //kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>(GPUAddFallback);
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<int>, ArrayView2D<int>, ArrayView2D<int>>(GPUAdd2);
-                config = SharedMemoryConfig.Empty;
-            }
-
-            resultBuffer = accelerator.Allocate<int>(one.GetSize(0), one.GetSize(1));
-
-            one.WaitForCopy();
-            two.WaitForCopy();
-
-            kernelConfig = ((resultBuffer.Length + groupSize - 1) / groupSize, groupSize, config);
-            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View);
-
-            accelerator.Synchronize();
-
-            FastMatrix<int> returnMatrix = new FastMatrix<int>(resultBuffer.GetAs2DArray());
-            return returnMatrix;
-        }
 
         /// <summary>
         /// Adds two matrices on the GPU
@@ -338,7 +288,7 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be added do not have the same sizes!");
             }
 
-            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
+            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator> kernel;
             int groupSize = accelerator.MaxNumThreadsPerGroup;
             SharedMemoryConfig config;
             KernelConfig kernelConfig;
@@ -357,12 +307,12 @@ namespace FastMatrixOperations
             
             if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>(GPUAdd);
+                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator>(GPUAdd);
                 config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
             }
             else
             {
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>(GPUAddFallback);
+                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator>(GPUAddFallback);
                 config = SharedMemoryConfig.Empty;
             }
 
@@ -372,7 +322,7 @@ namespace FastMatrixOperations
             two.WaitForCopy();
 
             kernelConfig = ((resultBuffer.Length + groupSize - 1) / groupSize, groupSize, config);
-            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View);
+            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View, default);
 
             accelerator.Synchronize();
 
@@ -397,7 +347,7 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("Matrices to be multiplied do not have compliant sizes! The number of columns in matrix one is " + one.GetSize(1) + " while the number of rows in matrix two is " + two.GetSize(0));
             }
 
-            Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
+            Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator> kernel;
             MemoryBuffer2D<T> resultBuffer;
 
             //start tasks
@@ -411,13 +361,13 @@ namespace FastMatrixOperations
                 two.CopyToGPU();
             }
 
-            kernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>(GPUMult);
+            kernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator>(GPUMult);
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), two.GetSize(1));
 
             one.WaitForCopy();
             two.WaitForCopy();
 
-            kernel(resultBuffer.Extent, one.buffer.View, two.buffer.View, resultBuffer.View);
+            kernel(resultBuffer.Extent, one.buffer.View, two.buffer.View, resultBuffer.View, default);
 
             accelerator.Synchronize();
 
@@ -442,7 +392,7 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be added do not have the same sizes!");
             }
 
-            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
+            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator> kernel;
             int groupSize = accelerator.MaxNumThreadsPerGroup;
             SharedMemoryConfig config;
             KernelConfig kernelConfig;
@@ -461,12 +411,12 @@ namespace FastMatrixOperations
 
             if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>(GPUSub);
+                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator>(GPUSub);
                 config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
             }
             else
             {
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>(GPUSubFallback);
+                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator>(GPUSubFallback);
                 config = SharedMemoryConfig.Empty;
             }
 
@@ -476,7 +426,7 @@ namespace FastMatrixOperations
             two.WaitForCopy();
 
             kernelConfig = ((resultBuffer.Length + groupSize - 1) / groupSize, groupSize, config);
-            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View);
+            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View, default);
 
             accelerator.Synchronize();
 
@@ -515,20 +465,7 @@ namespace FastMatrixOperations
 
         //kernels
         #region Kernels
-        private static void GPUAdd2(ArrayView2D<int> aView, ArrayView2D<int> bView, ArrayView2D<int> resView)
-        {
-            int x = Group.IdxX;
-            int y = Group.IdxY;
-            int globalX = Grid.GlobalIndex.X;
-            int globalY = Grid.GlobalIndex.Y;
-            Index2 group = new Index2(x, y);
-            Index2 global = new Index2(globalX, globalY);
-            var shared = SharedMemory.GetDynamic<int>().As2DView(group);
-            shared[group] = (dynamic)aView[group] + bView[group];
-            Group.Barrier();
-            resView[global] = shared[group];
-        }
-        private static void GPUAdd(ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView)
+        private static void GPUAdd(ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView, TOperator op)
         {
             int x = Group.IdxX;
             int y = Group.IdxY;
@@ -537,18 +474,18 @@ namespace FastMatrixOperations
             Index2 group = new Index2(x, y);
             Index2 global = new Index2(globalX, globalY);
             var shared = SharedMemory.GetDynamic<T>().As2DView(group);
-            shared[group] = (dynamic) aView[group] + bView[group];
+            shared[group] = op.Add(aView[group], bView[group]);
             Group.Barrier();
             resView[global] = shared[group];
         }
-        private static void GPUAddFallback(ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView)
+        private static void GPUAddFallback(ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView, TOperator op)
         {
             int x = Group.IdxX;
             int y = Group.IdxY;
             Index2 group = new Index2(x, y);
-            resView[group] = (dynamic) aView[group] + bView[group];
+            resView[group] = op.Add(aView[group], bView[group]);
         }
-        private static void GPUSub(ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView)
+        private static void GPUSub(ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView, TOperator op)
         {
             int x = Group.IdxX;
             int y = Group.IdxY;
@@ -557,26 +494,26 @@ namespace FastMatrixOperations
             Index2 group = new Index2(x, y);
             Index2 global = new Index2(globalX, globalY);
             var shared = SharedMemory.GetDynamic<T>().As2DView(group);
-            shared[group] = (dynamic) aView[group] - bView[group];
+            shared[group] = op.Subtract(aView[group], bView[group]);
             Group.Barrier();
             resView[global] = shared[group];
         }
-        private static void GPUSubFallback(ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView)
+        private static void GPUSubFallback(ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView, TOperator op)
         {
             int x = Group.IdxX;
             int y = Group.IdxY;
             Index2 group = new Index2(x, y);
-            resView[group] = (dynamic) aView[group] - bView[group];
+            resView[group] = op.Subtract(aView[group], bView[group]);
         }
-        private static void GPUMult(Index2 index, ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView)
+        private static void GPUMult(Index2 index, ArrayView2D<T> aView, ArrayView2D<T> bView, ArrayView2D<T> resView, TOperator op)
         {
             int x = index.X; //matrix one row
             int y = index.Y; //matrix two column
-            T sum = (dynamic) aView[x, 0] * bView[0, y]; //this needs to be done explicitly so we know where to start
+            T sum = op.Multiply(aView[x, 0], bView[0, y]); //this needs to be done explicitly so we know where to start
 
             for (int i = 1; i < aView.Height; i++)
             {
-                sum += (dynamic) aView[x, i] * bView[i, y];
+                sum = op.Add(sum, op.Multiply(aView[x, i], bView[i, y]));
             }
             resView[index] = sum;
         }

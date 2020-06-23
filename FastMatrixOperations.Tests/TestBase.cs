@@ -50,29 +50,6 @@ namespace FastMatrixOperations.Tests
         }
 
         //expect a + b
-        protected FastMatrix<int> AddOp2(GPUOperator<int> matrixOperator, int a, int b)
-        {
-            FastMatrix<int> one = MakeMatrix2(size, size, a);
-            FastMatrix<int> two = MakeMatrix2(size, size, b);
-
-            return matrixOperator.Add2(one, two);
-        }
-
-        protected FastMatrix<int> MakeMatrix2(int rows, int columns, int value)
-        {
-            int[,] resultArray = new int[rows, columns];
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < columns; j++)
-                {
-                    resultArray[i, j] = value;
-                }
-            }
-
-            return new FastMatrix<int>(resultArray);
-        }
-
-        //expect a + b
         protected FastMatrix<T> AddOp(MatrixOperatorBase<T> matrixOperator, T a, T b)
         {
             FastMatrix<T> one = MakeMatrix(size, size, a);

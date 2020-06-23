@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30105.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastMatrix", "FastMatrix\FastMatrix.csproj", "{F562DF2E-8DCC-4CF2-8334-2F4E40B3923C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastMatrixOperations", "FastMatrix\FastMatrixOperations.csproj", "{F562DF2E-8DCC-4CF2-8334-2F4E40B3923C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastMatrixOperations.Tests", "FastMatrixOperations.Tests\FastMatrixOperations.Tests.csproj", "{A508803D-7168-4F30-B7C3-F822AB84B27E}"
 EndProject
