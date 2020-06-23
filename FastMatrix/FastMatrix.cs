@@ -4,30 +4,31 @@ using ILGPU.Runtime.CPU;
 using System;
 using System.Threading.Tasks;
 using FastMatrixOperations.Internal;
+using System.Collections.Generic;
 
 namespace FastMatrixOperations
 {
     /// <summary>
-    /// A class that makes matrix operations easy and fast
+    /// A class that makes matrix operations easy and fast.
     /// </summary>
-    /// <remarks>See <seealso cref="FastMatrixOperations.MatrixOperatorBase"/> and children for doing operations</remarks>
-    public class FastMatrix
+    /// <typeparam name="T">The type stored in the fast matrix. It must define operators for the
+    /// operations you wish to use (i.e. if you want to use the 
+    /// <see cref="MatrixOperatorBase{T}.Add(FastMatrix{T}, FastMatrix{T})"/> functionality, the '+' operator
+    /// must be defined.</typeparam>
+    /// <remarks>
+    /// See <seealso cref="FastMatrixOperations.MatrixOperatorBase{T}"/> and children for doing operations.
+    /// </remarks>
+    public class FastMatrix<T>
+        where T: unmanaged
     {
-        /// <summary>
-        /// Actually stores the values for the matrix.
-        /// </summary>
-        /// <remarks>
-        /// This is a two dimensional array as opposed to a jagged array, which ensures that all elements have the same length.
-        /// <para>See <a href="https://stackoverflow.com/questions/4648914/why-we-have-both-jagged-array-and-multidimensional-array">this post</a> for more details.</para>
-        /// </remarks>
-        private double[,] array2d;
-        public MemoryBuffer2D<double> buffer { get; private set; }
+        private T[,] array2d;
+        public MemoryBuffer2D<T> buffer { get; private set; }
         private Task copyTask;
 
         /// <summary>
         /// Indexer to make querries look nicer
         /// </summary>
-        public double this[int row, int column]
+        public T this[int row, int column]
         {
             get
             {
@@ -47,7 +48,7 @@ namespace FastMatrixOperations
         /// <param name="columns">The number of columns.</param>
         public FastMatrix(int rows, int columns)
         {
-            array2d = new double[rows, columns];
+            array2d = new T[rows, columns];
             buffer = null;
         }
 
@@ -56,7 +57,7 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="array">The jagged array to be converted into a FastMatrix</param>
         /// <remarks>Note: The constructor will throw an exception if all inner arrays do not have the same length.</remarks>
-        public FastMatrix(double[][] array)
+        public FastMatrix(T[][] array)
         {
             //make sure size is correct
             for (int i = 0; i < array.Length; i++)
@@ -67,7 +68,7 @@ namespace FastMatrixOperations
                 }
             }
 
-            array2d = new double[array.Length, array[0].Length];
+            array2d = new T[array.Length, array[0].Length];
 
             for (int i = 0; i < array.Length; i++)
             {
@@ -85,7 +86,7 @@ namespace FastMatrixOperations
         /// Creates a new FastMatrix object from a two dimensional array.
         /// </summary>
         /// <param name="array">A two dimensional array</param>
-        public FastMatrix(double[,] array)
+        public FastMatrix(T[,] array)
         {
             array2d = array;
             buffer = null;
@@ -133,9 +134,9 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="row">Which row to get (0-based top to bottom)</param>
         /// <returns>The row as an array</returns>
-        public double[] GetRow(int row)
+        public T[] GetRow(int row)
         {
-            double[] rowData = new double[GetSize(1)];
+            T[] rowData = new T[GetSize(1)];
             for (int i = 0; i < rowData.Length; i++)
             {
                 rowData[i] = array2d[row, i];
@@ -149,9 +150,9 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="row">Which column to get (0-based left to right)</param>
         /// <returns>The column as an array</returns>
-        public double[] GetColumn(int column)
+        public T[] GetColumn(int column)
         {
-            double[] columnData = new double[GetSize(0)];
+            T[] columnData = new T[GetSize(0)];
             for (int i = 0; i < columnData.Length; i++)
             {
                 columnData[i] = array2d[i, column];
@@ -177,9 +178,9 @@ namespace FastMatrixOperations
         /// <summary>
         /// The actual function ran from for <see cref="CopyToGPU"/>
         /// </summary>
-        private void CopyToGPUWorker()
+        private unsafe void CopyToGPUWorker()
         {
-            if(HardwareAcceleratorManager.GPUAccelerator.MemorySize < GetSize(0) * GetSize(1) * sizeof(double))
+            if(HardwareAcceleratorManager.GPUAccelerator.MemorySize < GetSize(0) * GetSize(1) * sizeof(T))
             {
                 Console.WriteLine("Out of memory");
                 throw new OutOfMemoryException("The GPU doesn't have enough memory to house an array of this size!");
@@ -189,12 +190,10 @@ namespace FastMatrixOperations
 
             if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
-
-
                 var CPUAccelerator = new CPUAccelerator(accelerator.Context);
                 var stream = accelerator.CreateStream();
-                var pinnedCPUBuffer = CPUAccelerator.Allocate<double>(new Index2(GetSize(0), GetSize(1)));
-                buffer = accelerator.Allocate<double>(pinnedCPUBuffer.Extent);
+                var pinnedCPUBuffer = CPUAccelerator.Allocate<T>(new Index2(GetSize(0), GetSize(1)));
+                buffer = accelerator.Allocate<T>(pinnedCPUBuffer.Extent);
 
                 //copy to CPU buffer
                 pinnedCPUBuffer.CopyFrom(array2d, Index2.Zero, Index2.Zero, pinnedCPUBuffer.Extent);
@@ -208,7 +207,7 @@ namespace FastMatrixOperations
             }
             else
             {
-                buffer = accelerator.Allocate<double>(GetSize(0), GetSize(1));
+                buffer = accelerator.Allocate<T>(GetSize(0), GetSize(1));
                 buffer.CopyFrom(array2d, Index2.Zero, Index2.Zero, buffer.Extent);
             }
         }
@@ -229,7 +228,7 @@ namespace FastMatrixOperations
         /// </summary>
         public override bool Equals(object obj)
         {
-            return this.Equals(obj as FastMatrix);
+            return this.Equals(obj as FastMatrix<T>);
         }
 
         /// <summary>
@@ -237,7 +236,7 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="matrix">The matrix to compare to</param>
         /// <returns>A bool representing wheter they are equal or not</returns>
-        public bool Equals(FastMatrix matrix)
+        public bool Equals(FastMatrix<T> matrix)
         {
             // If parameter is null, return false.
             if (Object.ReferenceEquals(matrix, null))
@@ -267,7 +266,7 @@ namespace FastMatrixOperations
             {
                 for (int j = 0; j < GetSize(1); j++)
                 {
-                    if(matrix[i, j] != this[i, j])
+                    if(!matrix[i, j].Equals(this[i, j]))
                     {
                         return false;
                     }
@@ -292,7 +291,7 @@ namespace FastMatrixOperations
         /// <param name="one">First matrix</param>
         /// <param name="two">Second matrix</param>
         /// <returns>Wheter they are equal or not</returns>
-        public static bool operator ==(FastMatrix one, FastMatrix two)
+        public static bool operator ==(FastMatrix<T> one, FastMatrix<T> two)
         {
             // Check for null on left side.
             if (Object.ReferenceEquals(one, null))
@@ -313,7 +312,7 @@ namespace FastMatrixOperations
         /// <summary>
         /// Basically just <see cref="operator ==(FastMatrix, FastMatrix)"/> but uno reverse
         /// </summary>
-        public static bool operator !=(FastMatrix one, FastMatrix two)
+        public static bool operator !=(FastMatrix<T> one, FastMatrix<T> two)
         {
             return !(one == two);
         }
