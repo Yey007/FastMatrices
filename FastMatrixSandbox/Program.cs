@@ -3,10 +3,9 @@ namespace FastMatrixOperations.Sandbox
 {
     class Program
     {
-        /*
         static void Main(string[] args)
         {
-            GPUOperator<int> gpu = new GPUOperator<int>();
+            GPUOperator<int, IntOperator> gpu = new GPUOperator<int, IntOperator>();
             FastMatrix<int> one = new FastMatrix<int>(2, 2);
             FastMatrix<int> two = new FastMatrix<int>(2, 2);
 
@@ -22,6 +21,5 @@ namespace FastMatrixOperations.Sandbox
             FastMatrix<int> result = gpu.Add(one, two);
             result.Print();
         }
-        */
     }
 }
