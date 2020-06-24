@@ -10,11 +10,11 @@ folder first. It contains samples on all the topics you will need to get started
 don't be afraid to ask! Open an issue here on the GitHub and I'll try to help you out.
 
 # Features
-Alright, enough of the intro, let's talk features. There are three "operators" you can use
+Alright, enough of the intro, let's talk features. There are three main "operators" you can use
 to add, subtract, multiply, and transpose matrices.
 
-1. The CPU operator, which runs operations using a single thread on the CPU,
-2. The parallel operator, which runs operations using multiple threads on the CPU,
+1. The single threaded operator, which runs operations using a single thread on the CPU,
+2. The multi threaded operator, which runs operations using multiple threads on the CPU,
 3. The GPU operator, which runs operations on the GPU.
 
 Which one you should use depends on your situation. The GPU is extremely fast on it's own but has a lot of
@@ -25,10 +25,10 @@ In terms of types, FastMatrices supports primatives by default and even your own
 instead of ints? Cool, you can do that. Have a struct you want to add? Go ahead, you can do that. 
 However, there are a few caveats.
 
-1. Classes are not supported (including `string`). This is due to limitations of the ILGPU, which doesn't support classes (yet).
-2. `decimal` is not supported either. I think it uses some runtime stuff under the hood.
-3. To use structs, you must define what I call a "type operator" struct as well. You can see an example of this under
-FastMatrixOperations.Samples.GPU in Structs.cs.
+1. Classes are not supported on the GPU (including `string`). This is due to limitations of the ILGPU, which doesn't support classes (yet).
+2. `decimal` is not supported on the GPU either. I think it uses some runtime stuff under the hood, and is therefore not compatible with ILGPU.
+3. To use structs on the GPU, you must define what I call a "type operator" struct as well. You can see an example of this under
+FastMatrixOperations.Samples.GPU in Structs.cs. This is not necessary for the CPU, you only need to overload operators.
 
 # Contributing
 If you want to contribute to this, there aren't many guidelines really. If you want to add a feature, just open an issue,
