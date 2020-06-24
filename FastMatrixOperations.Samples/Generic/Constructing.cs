@@ -11,11 +11,11 @@ namespace FastMatrixOperations.Samples.Generic
         static void Construct()
         {
             //constructs a 10 row by 3 column matrix
-            FastMatrix<int> withSize = new FastMatrix<int>(10, 3);
+            BufferedFastMatrix<int> withSize = new BufferedFastMatrix<int>(10, 3);
 
             int[,] array = new int[10, 3];
             //constructs a 10 * 3 matrix from the multidimensional array
-            FastMatrix<int> with2DArray = new FastMatrix<int>(array);
+            BufferedFastMatrix<int> with2DArray = new BufferedFastMatrix<int>(array);
 
             int[][] jaggedArray = new int[10][];
             for(int i = 0, n = jaggedArray.Length; i < n; i++)
@@ -23,7 +23,7 @@ namespace FastMatrixOperations.Samples.Generic
                 jaggedArray[i] = new int[3];
             }
             //constructs a 10 * 3 matrix from the jagged array
-            FastMatrix<int> withJaggedArray = new FastMatrix<int>(jaggedArray);
+            BufferedFastMatrix<int> withJaggedArray = new BufferedFastMatrix<int>(jaggedArray);
 
             int[][] badJaggedArray = new int[10][];
             for (int i = 0, n = jaggedArray.Length; i < n; i++)
@@ -38,7 +38,7 @@ namespace FastMatrixOperations.Samples.Generic
                 }
             }
             //throws an exception
-            //FastMatrix<int> withBadJaggedArray = new FastMatrix<int>(badJaggedArray);
+            //BufferedFastMatrix<int> withBadJaggedArray = new BufferedFastMatrix<int>(badJaggedArray);
         }
     }
 }

@@ -8,8 +8,8 @@ namespace FastMatrixOperations.Samples.GPU
             GPUOperator<Vector3, Vector3Operator> op = new GPUOperator<Vector3, Vector3Operator>();
 
             //two 5*3 matrices
-            FastMatrix<Vector3> one = new FastMatrix<Vector3>(5, 3);
-            FastMatrix<Vector3> two = new FastMatrix<Vector3>(5, 3);
+            BufferedFastMatrix<Vector3> one = new BufferedFastMatrix<Vector3>(5, 3);
+            BufferedFastMatrix<Vector3> two = new BufferedFastMatrix<Vector3>(5, 3);
 
             Utilities.FillMatrix<Vector3>(one, new Vector3(10, 10, 10));
             Utilities.FillMatrix<Vector3>(two, new Vector3(5, 5, 5));

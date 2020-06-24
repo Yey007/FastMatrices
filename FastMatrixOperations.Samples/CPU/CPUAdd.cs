@@ -1,21 +1,21 @@
 ﻿
 namespace FastMatrixOperations.Samples.CPU
 {
-    static class GPUAdd
+    static class CPUAdd
     {
         static void Add()
         {
             //process is same for parallel
-            CPUOperator<int> op = new CPUOperator<int>();
+            SingleThreadedOperator<int> op = new SingleThreadedOperator<int>();
 
             //two 5*3 matrices
-            FastMatrix<int> one = new FastMatrix<int>(5, 3);
-            FastMatrix<int> two = new FastMatrix<int>(5, 3);
+            UnbufferedFastMatrix<int> one = new UnbufferedFastMatrix<int>(5, 3);
+            UnbufferedFastMatrix<int> two = new UnbufferedFastMatrix<int>(5, 3);
 
             Utilities.FillMatrix<int>(one, 5);
             Utilities.FillMatrix<int>(two, 10);
 
-            FastMatrix<int> result = op.Add(one, two);
+            UnbufferedFastMatrix<int> result = op.Add(one, two);
         }
     }
 }

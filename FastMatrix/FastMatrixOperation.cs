@@ -7,15 +7,14 @@ using FastMatrixOperations.Internal;
 namespace FastMatrixOperations
 {
     /// <summary>
-    /// The base class that all operators derive from
+    /// The base class for CPU operators
     /// </summary>
-    public abstract class MatrixOperatorBase<T>
-        where T: unmanaged
+    public abstract class CPUOperatorBase<T>
     {
-        public abstract FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two);
-        public abstract FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two);
-        public abstract FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two);
-        public abstract FastMatrix<T> Transpose(FastMatrix<T> matrix);
+        public abstract UnbufferedFastMatrix<T> Add(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two);
+        public abstract UnbufferedFastMatrix<T> Subtract(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two);
+        public abstract UnbufferedFastMatrix<T> Multiply(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two);
+        public abstract UnbufferedFastMatrix<T> Transpose(UnbufferedFastMatrix<T> matrix);
         protected static T MultiplyArrays(T[] row, T[] column)
         {
             T sum = (dynamic)row[0] * column[0];
@@ -31,8 +30,7 @@ namespace FastMatrixOperations
     /// <summary>
     /// Accesses the CPU for operations
     /// </summary>
-    public class CPUOperator<T> : MatrixOperatorBase<T>
-        where T: unmanaged
+    public class SingleThreadedOperator<T> : CPUOperatorBase<T>
     {
         /// <summary>
         /// Adds two matrices on the CPU using a single thread
@@ -40,7 +38,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the addition</returns>
-        public override FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two)
+        public override UnbufferedFastMatrix<T> Add(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
         {
             if(one == null || two == null)
             {
@@ -51,7 +49,7 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be added " +
                     "do not have the same sizes!");
             }
-            FastMatrix<T> fastMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
             for (int i = 0; i < one.GetSize(0); i++)
             {
                 for (int j = 0; j < one.GetSize(1); j++)
@@ -68,7 +66,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the multiplication</returns>
-        public override FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two)
+        public override UnbufferedFastMatrix<T> Multiply(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -81,7 +79,7 @@ namespace FastMatrixOperations
                     + "the number of rows in matrix two is " + two.GetSize(0));
             }
 
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            UnbufferedFastMatrix<T> returnMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
 
             for (int i = 0; i < returnMatrix.GetSize(0); i++)
             {
@@ -99,7 +97,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the subtraction (one - two)</returns>
-        public override FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two)
+        public override UnbufferedFastMatrix<T> Subtract(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -110,7 +108,7 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be " +
                     "subtracted do not have the same sizes!");
             }
-            FastMatrix<T> fastMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
 
             for (int i = 0; i < one.GetSize(0); i++)
             {
@@ -127,13 +125,13 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="matrix">The matrix</param>
         /// <returns>The result of the transpose</returns>
-        public override FastMatrix<T> Transpose(FastMatrix<T> matrix)
+        public override UnbufferedFastMatrix<T> Transpose(UnbufferedFastMatrix<T> matrix)
         {
             if (matrix == null)
             {
                 throw new ArgumentNullException();
             }
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(matrix.GetSize(1), matrix.GetSize(0));
+            UnbufferedFastMatrix<T> returnMatrix = new UnbufferedFastMatrix<T>(matrix.GetSize(1), matrix.GetSize(0));
             for (int i = 0; i < matrix.GetSize(0); i++)
             {
                 for (int j = 0; j < matrix.GetSize(1); j++)
@@ -148,8 +146,7 @@ namespace FastMatrixOperations
     /// <summary>
     /// Accesses the CPU for operations, but operations run using multiple threads
     /// </summary>
-    public class ParallelOperator<T> : MatrixOperatorBase<T>
-        where T : unmanaged
+    public class MultiThreadedOperator<T> : CPUOperatorBase<T>
     {
         /// <summary>
         /// Adds two matrices on the CPU using multiple threads
@@ -157,7 +154,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the addition</returns>
-        public override FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two)
+        public override UnbufferedFastMatrix<T> Add(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -168,7 +165,7 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be " +
                     "added do not have the same sizes!");
             }
-            FastMatrix<T> fastMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
             Parallel.For(0, one.GetSize(0), i =>
             {
                 for (int j = 0; j < one.GetSize(1); j++)
@@ -185,7 +182,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the multiplication</returns>
-        public override FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two)
+        public override UnbufferedFastMatrix<T> Multiply(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -198,7 +195,7 @@ namespace FastMatrixOperations
                     + "the number of rows in matrix two is " + two.GetSize(0));
             }
 
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            UnbufferedFastMatrix<T> returnMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
 
             Parallel.For(0, returnMatrix.GetSize(0), (i) =>
             {
@@ -216,7 +213,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the subtraction (one - two)</returns>
-        public override FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two)
+        public override UnbufferedFastMatrix<T> Subtract(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -227,7 +224,7 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be " +
                     "subtracted do not have the same sizes!");
             }
-            FastMatrix<T> fastMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
             Parallel.For(0, one.GetSize(0), i =>
             {
                 for (int j = 0; j < one.GetSize(1); j++)
@@ -243,13 +240,13 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="matrix">The matrix</param>
         /// <returns>The transposed matrix</returns>
-        public override FastMatrix<T> Transpose(FastMatrix<T> matrix)
+        public override UnbufferedFastMatrix<T> Transpose(UnbufferedFastMatrix<T> matrix)
         {
             if (matrix == null)
             {
                 throw new ArgumentNullException();
             }
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(matrix.GetSize(1), matrix.GetSize(0));
+            UnbufferedFastMatrix<T> returnMatrix = new UnbufferedFastMatrix<T>(matrix.GetSize(1), matrix.GetSize(0));
 
             Parallel.For(0, matrix.GetSize(0), (i) =>
             {
@@ -275,7 +272,7 @@ namespace FastMatrixOperations
     /// You can mitigate this overhead by starting copies early using 
     /// <see cref="FastMatrixOperations.FastMatrix.CopyToGPU"/> <br></br>
     /// </remarks>
-    public class GPUOperator<T, TOperator> : MatrixOperatorBase<T>
+    public class GPUOperator<T, TOperator>
         where T : unmanaged
         where TOperator: struct, ITypeOperator<T>
     {
@@ -287,7 +284,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the addition</returns>
-        public override FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two)
+        public BufferedFastMatrix<T> Add(BufferedFastMatrix<T> one, BufferedFastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -342,7 +339,7 @@ namespace FastMatrixOperations
             var tempArray = resultBuffer.GetAs2DArray();
             accelerator.Synchronize();
 
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(tempArray);
+            BufferedFastMatrix<T> returnMatrix = new BufferedFastMatrix<T>(tempArray);
             return returnMatrix;
         }
 
@@ -352,7 +349,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the multiplication</returns>
-        public override FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two)
+        public BufferedFastMatrix<T> Multiply(BufferedFastMatrix<T> one, BufferedFastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -394,7 +391,7 @@ namespace FastMatrixOperations
             var tempArray = resultBuffer.GetAs2DArray();
             accelerator.Synchronize();
 
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(tempArray);
+            BufferedFastMatrix<T> returnMatrix = new BufferedFastMatrix<T>(tempArray);
             return returnMatrix;
         }
 
@@ -404,7 +401,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the subtraction (one - two) </returns>
-        public override FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two)
+        public BufferedFastMatrix<T> Subtract(BufferedFastMatrix<T> one, BufferedFastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -459,7 +456,7 @@ namespace FastMatrixOperations
             var tempArray = resultBuffer.GetAs2DArray();
             accelerator.Synchronize();
 
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(tempArray);
+            BufferedFastMatrix<T> returnMatrix = new BufferedFastMatrix<T>(tempArray);
             return returnMatrix;
         }
 
@@ -468,7 +465,7 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="matrix">The matrix</param>
         /// <returns>The transposed matrix</returns>
-        public override FastMatrix<T> Transpose(FastMatrix<T> matrix)
+        public BufferedFastMatrix<T> Transpose(BufferedFastMatrix<T> matrix)
         {
             if (matrix == null)
             {
@@ -494,7 +491,7 @@ namespace FastMatrixOperations
             var tempArray = resultBuffer.GetAs2DArray();
             accelerator.Synchronize();
 
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(tempArray);
+            BufferedFastMatrix<T> returnMatrix = new BufferedFastMatrix<T>(tempArray);
             return returnMatrix;
         }
 
