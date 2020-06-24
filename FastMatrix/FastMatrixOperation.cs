@@ -339,7 +339,10 @@ namespace FastMatrixOperations
 
             accelerator.Synchronize();
 
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(resultBuffer.GetAs2DArray());
+            var tempArray = resultBuffer.GetAs2DArray();
+            accelerator.Synchronize();
+
+            FastMatrix<T> returnMatrix = new FastMatrix<T>(tempArray);
             return returnMatrix;
         }
 
@@ -388,7 +391,10 @@ namespace FastMatrixOperations
 
             accelerator.Synchronize();
 
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(resultBuffer.GetAs2DArray());
+            var tempArray = resultBuffer.GetAs2DArray();
+            accelerator.Synchronize();
+
+            FastMatrix<T> returnMatrix = new FastMatrix<T>(tempArray);
             return returnMatrix;
         }
 
@@ -450,7 +456,10 @@ namespace FastMatrixOperations
 
             accelerator.Synchronize();
 
-            FastMatrix<T> returnMatrix = new FastMatrix<T>(resultBuffer.GetAs2DArray());
+            var tempArray = resultBuffer.GetAs2DArray();
+            accelerator.Synchronize();
+
+            FastMatrix<T> returnMatrix = new FastMatrix<T>(tempArray);
             return returnMatrix;
         }
 
@@ -481,7 +490,12 @@ namespace FastMatrixOperations
 
             kernel(resultBuffer.Extent, matrix.buffer.View, resultBuffer.View);
             accelerator.Synchronize();
-            return new FastMatrix<T>(resultBuffer.GetAs2DArray());
+
+            var tempArray = resultBuffer.GetAs2DArray();
+            accelerator.Synchronize();
+
+            FastMatrix<T> returnMatrix = new FastMatrix<T>(tempArray);
+            return returnMatrix;
         }
 
         //kernels
