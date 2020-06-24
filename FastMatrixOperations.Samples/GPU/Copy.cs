@@ -7,7 +7,7 @@ namespace FastMatrixOperations.Samples.GPU
         static void GPUCopy()
         {
             GPUOperator<int, IntOperator> op = new GPUOperator<int, IntOperator>();
-            FastMatrix<int> matrix = new FastMatrix<int>(5, 5);
+            BufferedFastMatrix<int> matrix = new BufferedFastMatrix<int>(5, 5);
 
             //start copying to the GPU
             matrix.CopyToGPU();

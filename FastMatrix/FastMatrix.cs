@@ -9,22 +9,13 @@ using System.Collections.Generic;
 namespace FastMatrixOperations
 {
     /// <summary>
-    /// A class that makes matrix operations easy and fast.
+    /// An unbuffered fast matrix. It supports classes, but can only
+    /// operate on the CPU.
     /// </summary>
-    /// <typeparam name="T">The type stored in the fast matrix. It must define operators for the
-    /// operations you wish to use (i.e. if you want to use the 
-    /// <see cref="MatrixOperatorBase{T}.Add(FastMatrix{T}, FastMatrix{T})"/> functionality, 
-    /// the '+' operator must be defined.</typeparam>
-    /// <remarks>
-    /// See <seealso cref="FastMatrixOperations.MatrixOperatorBase{T}"/> 
-    /// and children for doing operations.
-    /// </remarks>
-    public class FastMatrix<T>
-        where T: unmanaged
+    /// <typeparam name="T">The type this matrix should store</typeparam>
+    public class UnbufferedFastMatrix<T>
     {
-        private T[,] array2d;
-        public MemoryBuffer2D<T> buffer { get; private set; }
-        private Task copyTask;
+        protected T[,] array2d;
 
         /// <summary>
         /// Indexer to make querries look nicer
@@ -43,23 +34,22 @@ namespace FastMatrixOperations
         }
 
         /// <summary>
-        /// Creates a FastMatrix object with the given dimensions.
+        /// Creates a UnbufferedFastMatrix object with the given dimensions.
         /// </summary>
         /// <param name="rows">The number of rows.</param>
         /// <param name="columns">The number of columns.</param>
-        public FastMatrix(int rows, int columns)
+        public UnbufferedFastMatrix(int rows, int columns)
         {
             array2d = new T[rows, columns];
-            buffer = null;
         }
 
         /// <summary>
-        /// Creates a new FastMatrix object from a jagged array.
+        /// Creates a new UnbufferedFastMatrix object from a jagged array.
         /// </summary>
-        /// <param name="array">The jagged array to be converted into a FastMatrix</param>
+        /// <param name="array">The jagged array to be converted into a UnbufferedFastMatrix</param>
         /// <remarks>Note: The constructor will throw an exception if all 
         /// inner arrays do not have the same length.</remarks>
-        public FastMatrix(T[][] array)
+        public UnbufferedFastMatrix(T[][] array)
         {
             //make sure size is correct
             for (int i = 0; i < array.Length; i++)
@@ -81,19 +71,15 @@ namespace FastMatrixOperations
                     array2d[i, j] = array[i][j];
                 }
             }
-
-            //set buffer to null so it can be set later/checked
-            buffer = null;
         }
 
         /// <summary>
-        /// Creates a new FastMatrix object from a two dimensional array.
+        /// Creates a new UnbufferedFastMatrix object from a two dimensional array.
         /// </summary>
         /// <param name="array">A two dimensional array</param>
-        public FastMatrix(T[,] array)
+        public UnbufferedFastMatrix(T[,] array)
         {
             array2d = array;
-            buffer = null;
         }
 
         /// <summary>
@@ -167,6 +153,143 @@ namespace FastMatrixOperations
         }
 
         /// <summary>
+        /// Override for default equals function
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as UnbufferedFastMatrix<T>);
+        }
+
+        /// <summary>
+        /// Checks if this matrix is equal to another by looking at their contents
+        /// </summary>
+        /// <param name="matrix">The matrix to compare to</param>
+        /// <returns>A bool representing wheter they are equal or not</returns>
+        public bool Equals(UnbufferedFastMatrix<T> matrix)
+        {
+            // If parameter is null, return false.
+            if (Object.ReferenceEquals(matrix, null))
+            {
+                return false;
+            }
+
+            // Optimization for a common success case.
+            if (Object.ReferenceEquals(this, matrix))
+            {
+                return true;
+            }
+
+            // If run-time types are not exactly the same, return false.
+            if (this.GetType() != matrix.GetType())
+            {
+                return false;
+            }
+
+            //if sizes aren't same return false
+            if ((GetSize(0) != matrix.GetSize(0)) || (GetSize(1) != matrix.GetSize(1)))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < GetSize(0); i++)
+            {
+                for (int j = 0; j < GetSize(1); j++)
+                {
+                    if (!matrix[i, j].Equals(this[i, j]))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Hashes the array based on it's contents
+        /// </summary>
+        /// <returns>An int representing the hash code</returns>
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(array2d);
+        }
+
+        /// <summary>
+        /// Operator for comparing two matrices
+        /// </summary>
+        /// <param name="one">First matrix</param>
+        /// <param name="two">Second matrix</param>
+        /// <returns>Wheter they are equal or not</returns>
+        public static bool operator ==(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        {
+            // Check for null on left side.
+            if (Object.ReferenceEquals(one, null))
+            {
+                if (Object.ReferenceEquals(two, null))
+                {
+                    // null == null = true.
+                    return true;
+                }
+
+                // Only the left side is null.
+                return false;
+            }
+            // Equals handles case of null on right side.
+            return one.Equals(two);
+        }
+
+        /// <summary>
+        /// Basically just <see cref="operator ==(FastMatrix, FastMatrix)"/> but uno reverse
+        /// </summary>
+        public static bool operator !=(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        {
+            return !(one == two);
+        }
+    }
+
+    /// <summary>
+    /// A buffered fast matrix, It contains a memory buffer to allow copying
+    /// to the GPU, but it only supports primatives and structs.
+    /// </summary>
+    /// <typeparam name="T">The type this matrix should store</typeparam>
+    public class BufferedFastMatrix<T> : UnbufferedFastMatrix<T>
+        where T: unmanaged
+    {
+        public MemoryBuffer2D<T> buffer { get; private set; }
+        private Task copyTask;
+
+        /// <summary>
+        /// Creates a BufferedFastMatrix object with the given dimensions.
+        /// </summary>
+        /// <param name="rows">The number of rows.</param>
+        /// <param name="columns">The number of columns.</param>
+        public BufferedFastMatrix(int rows, int columns) : base(rows, columns)
+        {
+            buffer = null;
+        }
+
+        /// <summary>
+        /// Creates a new BufferedFastMatrix object from a jagged array.
+        /// </summary>
+        /// <param name="array">The jagged array to be converted into a BufferedFastMatrix</param>
+        /// <remarks>Note: The constructor will throw an exception if all 
+        /// inner arrays do not have the same length.</remarks>
+        public BufferedFastMatrix(T[][] array) : base(array)
+        {
+            //set buffer to null so it can be set later/checked
+            buffer = null;
+        }
+
+        /// <summary>
+        /// Creates a new BufferedFastMatrix object from a two dimensional array.
+        /// </summary>
+        /// <param name="array">A two dimensional array</param>
+        public BufferedFastMatrix(T[,] array) : base(array)
+        {
+            buffer = null;
+        }
+
+        /// <summary>
         /// Copies the matrix to GPU memory.
         /// </summary>
         /// <returns>The stream associated with copying the matrix</returns>
@@ -230,100 +353,6 @@ namespace FastMatrixOperations
             {
                 copyTask.Wait();
             }
-        }
-
-        /// <summary>
-        /// Override for default equals function
-        /// </summary>
-        public override bool Equals(object obj)
-        {
-            return this.Equals(obj as FastMatrix<T>);
-        }
-
-        /// <summary>
-        /// Checks if this matrix is equal to another by looking at their contents
-        /// </summary>
-        /// <param name="matrix">The matrix to compare to</param>
-        /// <returns>A bool representing wheter they are equal or not</returns>
-        public bool Equals(FastMatrix<T> matrix)
-        {
-            // If parameter is null, return false.
-            if (Object.ReferenceEquals(matrix, null))
-            {
-                return false;
-            }
-
-            // Optimization for a common success case.
-            if (Object.ReferenceEquals(this, matrix))
-            {
-                return true;
-            }
-
-            // If run-time types are not exactly the same, return false.
-            if (this.GetType() != matrix.GetType())
-            {
-                return false;
-            }
-
-            //if sizes aren't same return false
-            if ((GetSize(0) != matrix.GetSize(0)) || (GetSize(1) != matrix.GetSize(1)))
-            {
-                return false;
-            }
-
-            for(int i = 0; i < GetSize(0); i++)
-            {
-                for (int j = 0; j < GetSize(1); j++)
-                {
-                    if(!matrix[i, j].Equals(this[i, j]))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Hashes the array based on it's contents
-        /// </summary>
-        /// <returns>An int representing the hash code</returns>
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(array2d);
-        }
-
-        /// <summary>
-        /// Operator for comparing two matrices
-        /// </summary>
-        /// <param name="one">First matrix</param>
-        /// <param name="two">Second matrix</param>
-        /// <returns>Wheter they are equal or not</returns>
-        public static bool operator ==(FastMatrix<T> one, FastMatrix<T> two)
-        {
-            // Check for null on left side.
-            if (Object.ReferenceEquals(one, null))
-            {
-                if (Object.ReferenceEquals(two, null))
-                {
-                    // null == null = true.
-                    return true;
-                }
-
-                // Only the left side is null.
-                return false;
-            }
-            // Equals handles case of null on right side.
-            return one.Equals(two);
-        }
-
-        /// <summary>
-        /// Basically just <see cref="operator ==(FastMatrix, FastMatrix)"/> but uno reverse
-        /// </summary>
-        public static bool operator !=(FastMatrix<T> one, FastMatrix<T> two)
-        {
-            return !(one == two);
         }
     }
 }

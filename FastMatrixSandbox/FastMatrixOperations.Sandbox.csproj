@@ -10,4 +10,8 @@
     <ProjectReference Include="..\FastMatrix\FastMatrixOperations.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="GPU\" />
+  </ItemGroup>
+
 </Project>

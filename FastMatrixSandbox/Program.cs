@@ -1,13 +1,16 @@
 ﻿
+using System;
+
 namespace FastMatrixOperations.Sandbox
 {
     class Program
     {
         static void Main(string[] args)
         {
+            /*
             GPUOperator<int, IntOperator> gpu = new GPUOperator<int, IntOperator>();
-            FastMatrix<int> one = new FastMatrix<int>(2, 2);
-            FastMatrix<int> two = new FastMatrix<int>(2, 2);
+            BufferedFastMatrix<int> one = new BufferedFastMatrix<int>(2, 2);
+            BufferedFastMatrix<int> two = new BufferedFastMatrix<int>(2, 2);
 
             for (int i = 0; i < 2; i++)
             {
@@ -18,8 +21,46 @@ namespace FastMatrixOperations.Sandbox
                 }
             }
 
-            FastMatrix<int> result = gpu.Add(one, two);
+            BufferedFastMatrix<int> result = gpu.Add(one, two);
             result.Print();
+            */
+
+            B b = new B();
+            b.b = 2;
+            A a = (A)b;
+            B c = (B)a;
+            Console.WriteLine(c.b);
+        }
+    }
+
+    public abstract class IDC
+    {
+
+    }
+
+    public class D : IDC
+    {
+
+    }
+    
+    public class C : IDC
+    {
+
+    }
+
+    public abstract class A
+    {
+        public int a = 5;
+        public abstract IDC GetC();
+    }
+
+    public class B : A
+    {
+        public int b = 10;
+
+        public override IDC GetC()
+        {
+            return new D();
         }
     }
 }
