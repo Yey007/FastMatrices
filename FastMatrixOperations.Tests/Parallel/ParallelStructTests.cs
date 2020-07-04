@@ -4,7 +4,8 @@ namespace FastMatrixOperations.Tests.Parallel
 {
     public class ParallelStructTests : TestBase<Vector3>
     {
-        MultiThreadedOperator<Vector3> cpu = new MultiThreadedOperator<Vector3>();
+        MultiThreadedOperator<Vector3, Vector3Operator> cpu = 
+            new MultiThreadedOperator<Vector3, Vector3Operator>();
 
         Vector3 twenty = new Vector3(20, 20, 20);
         Vector3 fifteen = new Vector3(15, 15, 15);

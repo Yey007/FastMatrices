@@ -3,7 +3,7 @@ using FastMatrixOperations;
 
 namespace FastMatrixOperations
 {
-    public struct IntOperator : ITypeOperator<int>
+    public struct IntOperator : IStructTypeOperator<int>
     {
         public int Add(int first, int second)
         {
@@ -21,7 +21,7 @@ namespace FastMatrixOperations
         }
     }
 
-    public struct FloatOperator : ITypeOperator<float>
+    public struct FloatOperator : IStructTypeOperator<float>
     {
         public float Add(float first, float second)
         {
@@ -39,7 +39,7 @@ namespace FastMatrixOperations
         }
     }
 
-    public struct DoubleOperator : ITypeOperator<double>
+    public struct DoubleOperator : IStructTypeOperator<double>
     {
         public double Add(double first, double second)
         {

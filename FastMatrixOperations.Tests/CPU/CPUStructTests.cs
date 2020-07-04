@@ -6,7 +6,8 @@ namespace FastMatrixOperations.Tests.CPU
 {
     public class CPUStructTests : TestBase<Vector3>
     {
-        SingleThreadedOperator<Vector3> cpu = new SingleThreadedOperator<Vector3>();
+        SingleThreadedOperator<Vector3, Vector3Operator> cpu = 
+            new SingleThreadedOperator<Vector3, Vector3Operator>();
         Vector3 twenty = new Vector3(20, 20, 20);
         Vector3 fifteen = new Vector3(15, 15, 15);
         Vector3 five = new Vector3(5, 5, 5);

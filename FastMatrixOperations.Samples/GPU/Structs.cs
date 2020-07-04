@@ -53,7 +53,7 @@ namespace FastMatrixOperations.Samples.GPU
     //it must implement ITypeOperator in order to be used in the GPU
     //This is because operators cannot be resolved at runtime on the GPU
     //This is only necessary when using the GPU
-    public struct Vector3Operator : ITypeOperator<Vector3>
+    public struct Vector3Operator : IStructTypeOperator<Vector3>
     {
         public Vector3 Add(Vector3 first, Vector3 second)
         {

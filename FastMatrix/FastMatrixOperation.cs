@@ -9,18 +9,24 @@ namespace FastMatrixOperations
     /// <summary>
     /// The base class for CPU operators
     /// </summary>
-    public abstract class CPUOperatorBase<T>
+    public abstract class CPUOperatorBase<T, TOperator>
+        where TOperator : IGenericTypeOperator<T>, new()
     {
-        public abstract UnbufferedFastMatrix<T> Add(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two);
-        public abstract UnbufferedFastMatrix<T> Subtract(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two);
-        public abstract UnbufferedFastMatrix<T> Multiply(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two);
-        public abstract UnbufferedFastMatrix<T> Transpose(UnbufferedFastMatrix<T> matrix);
+        public abstract UnbufferedFastMatrix<T> Add(UnbufferedFastMatrix<T> one,
+            UnbufferedFastMatrix<T> two);
+        public abstract UnbufferedFastMatrix<T> Subtract(UnbufferedFastMatrix<T> one,
+            UnbufferedFastMatrix<T> two);
+        public abstract UnbufferedFastMatrix<T> Multiply(UnbufferedFastMatrix<T> one,
+            UnbufferedFastMatrix<T> two);
+        public abstract UnbufferedFastMatrix<T> Transpose(
+            UnbufferedFastMatrix<T> matrix);
         protected static T MultiplyArrays(T[] row, T[] column)
         {
-            T sum = (dynamic)row[0] * column[0];
+            TOperator op = new TOperator();
+            T sum = op.Multiply(row[0], column[0]);
             for (int i = 1; i < row.Length; i++)
             {
-                sum += (dynamic) row[i] * column[i];
+                sum = op.Add(sum, op.Multiply(row[i], column[i]));
             }
 
             return sum;
@@ -30,7 +36,8 @@ namespace FastMatrixOperations
     /// <summary>
     /// Accesses the CPU for operations
     /// </summary>
-    public class SingleThreadedOperator<T> : CPUOperatorBase<T>
+    public class SingleThreadedOperator<T, TOperator> : CPUOperatorBase<T, TOperator>
+        where TOperator : IGenericTypeOperator<T>, new()
     {
         /// <summary>
         /// Adds two matrices on the CPU using a single thread
@@ -49,12 +56,13 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be added " +
                     "do not have the same sizes!");
             }
+            TOperator op = new TOperator();
             UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
             for (int i = 0; i < one.GetSize(0); i++)
             {
                 for (int j = 0; j < one.GetSize(1); j++)
                 {
-                    fastMatrix[i, j] = (dynamic) one[i, j] + two[i, j];
+                    fastMatrix[i, j] = op.Add(one[i, j], two[i, j]);
                 }
             }
             return fastMatrix;
@@ -78,7 +86,6 @@ namespace FastMatrixOperations
                     + "sizes! The number of columns in matrix one is " + one.GetSize(1) + " while "
                     + "the number of rows in matrix two is " + two.GetSize(0));
             }
-
             UnbufferedFastMatrix<T> returnMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
 
             for (int i = 0; i < returnMatrix.GetSize(0); i++)
@@ -108,13 +115,14 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be " +
                     "subtracted do not have the same sizes!");
             }
+            TOperator op = new TOperator();
             UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
 
             for (int i = 0; i < one.GetSize(0); i++)
             {
                 for (int j = 0; j < one.GetSize(1); j++)
                 {
-                    fastMatrix[i, j] = (dynamic) one[i, j] - two[i, j];
+                    fastMatrix[i, j] = op.Subtract(one[i, j], two[i, j]);
                 }
             }
             return fastMatrix;
@@ -146,7 +154,8 @@ namespace FastMatrixOperations
     /// <summary>
     /// Accesses the CPU for operations, but operations run using multiple threads
     /// </summary>
-    public class MultiThreadedOperator<T> : CPUOperatorBase<T>
+    public class MultiThreadedOperator<T, TOperator> : CPUOperatorBase<T, TOperator>
+        where TOperator : IGenericTypeOperator<T>, new()
     {
         /// <summary>
         /// Adds two matrices on the CPU using multiple threads
@@ -165,12 +174,13 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be " +
                     "added do not have the same sizes!");
             }
+            TOperator op = new TOperator();
             UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
             Parallel.For(0, one.GetSize(0), i =>
             {
                 for (int j = 0; j < one.GetSize(1); j++)
                 {
-                    fastMatrix[i, j] = (dynamic) one[i, j] + two[i, j];
+                    fastMatrix[i, j] = op.Add(one[i, j], two[i, j]);
                 }
             });
             return fastMatrix;
@@ -224,12 +234,13 @@ namespace FastMatrixOperations
                 throw new BadDimensionException("The matrices to be " +
                     "subtracted do not have the same sizes!");
             }
+            TOperator op = new TOperator();
             UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
             Parallel.For(0, one.GetSize(0), i =>
             {
                 for (int j = 0; j < one.GetSize(1); j++)
                 {
-                    fastMatrix[i, j] = (dynamic) one[i, j] - two[i, j];
+                    fastMatrix[i, j] = op.Subtract(one[i, j], two[i, j]);
                 }
             });
             return fastMatrix;
@@ -274,7 +285,7 @@ namespace FastMatrixOperations
     /// </remarks>
     public class GPUOperator<T, TOperator>
         where T : unmanaged
-        where TOperator: struct, ITypeOperator<T>
+        where TOperator: struct, IStructTypeOperator<T>
     {
         private Accelerator accelerator = HardwareAcceleratorManager.GPUAccelerator;
 
