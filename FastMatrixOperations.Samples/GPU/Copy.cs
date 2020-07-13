@@ -15,6 +15,7 @@ namespace FastMatrixOperations.Samples.GPU
             //do other stuff here...
 
             //all operations on the GPU will automatically finish the copy
+            //when starting an operation
             op.Transpose(matrix);
         }
     }

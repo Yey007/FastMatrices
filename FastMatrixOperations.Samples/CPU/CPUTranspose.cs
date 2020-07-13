@@ -6,7 +6,8 @@ namespace FastMatrixOperations.Samples.CPU
         static void Transpose()
         {
             //process is same for parallel
-            SingleThreadedOperator<int> op = new SingleThreadedOperator<int>();
+            SingleThreadedOperator<int, IntOperator> op =
+                new SingleThreadedOperator<int, IntOperator>();
 
             //5*3 matrix
             UnbufferedFastMatrix<int> one = new UnbufferedFastMatrix<int>(5, 3);

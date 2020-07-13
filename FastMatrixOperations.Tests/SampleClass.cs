@@ -42,4 +42,22 @@ namespace FastMatrixOperations.Tests
             return !left.Equals(right);
         }
     }
+
+    public class Vector2Operator : IGenericTypeOperator<Vector2>
+    {
+        public Vector2 Add(Vector2 first, Vector2 second)
+        {
+            return first + second;
+        }
+
+        public Vector2 Multiply(Vector2 first, Vector2 second)
+        {
+            return first * second;
+        }
+
+        public Vector2 Subtract(Vector2 first, Vector2 second)
+        {
+            return first - second;
+        }
+    }
 }

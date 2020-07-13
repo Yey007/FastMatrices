@@ -44,7 +44,7 @@ namespace FastMatrixOperations.Tests
         }
     }
 
-    public struct Vector3Operator : ITypeOperator<Vector3>
+    public struct Vector3Operator : IStructTypeOperator<Vector3>
     {
         public Vector3 Add(Vector3 first, Vector3 second)
         {

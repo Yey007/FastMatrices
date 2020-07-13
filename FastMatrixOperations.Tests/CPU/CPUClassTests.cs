@@ -4,7 +4,8 @@ namespace FastMatrixOperations.Tests.CPU
 {
     public class CPUClassTests : TestBase<Vector2>
     {
-        SingleThreadedOperator<Vector2> cpu = new SingleThreadedOperator<Vector2>();
+        SingleThreadedOperator<Vector2, Vector2Operator> cpu = 
+            new SingleThreadedOperator<Vector2, Vector2Operator>();
         Vector2 twenty = new Vector2(20, 20);
         Vector2 fifteen = new Vector2(15, 15);
         Vector2 five = new Vector2(5, 5);

@@ -6,7 +6,8 @@ namespace FastMatrixOperations.Samples.CPU
         static void Multiply()
         {
             //process is same for parallel
-            SingleThreadedOperator<int> op = new SingleThreadedOperator<int>();
+            SingleThreadedOperator<int, IntOperator> op =
+                new SingleThreadedOperator<int, IntOperator>();
 
             //two 5*3 matrices
             UnbufferedFastMatrix<int> one = new UnbufferedFastMatrix<int>(5, 3);

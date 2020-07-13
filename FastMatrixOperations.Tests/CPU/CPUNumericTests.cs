@@ -6,7 +6,8 @@ namespace FastMatrixOperations.Tests.CPU
 {
     public class CPUNumericTests : TestBase<int>
     {
-        SingleThreadedOperator<int> cpu = new SingleThreadedOperator<int>();
+        SingleThreadedOperator<int, IntOperator> cpu = 
+            new SingleThreadedOperator<int, IntOperator>();
 
         [Fact]
         public void Add()

@@ -4,7 +4,8 @@ namespace FastMatrixOperations.Tests.Parallel
 {
     public class ParallelNumericTests : TestBase<int>
     {
-        MultiThreadedOperator<int> cpu = new MultiThreadedOperator<int>();
+        MultiThreadedOperator<int, IntOperator> cpu = 
+            new MultiThreadedOperator<int, IntOperator>();
 
         [Fact]
         public void Add()
