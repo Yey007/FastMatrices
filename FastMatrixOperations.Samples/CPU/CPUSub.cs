@@ -6,17 +6,17 @@ namespace FastMatrixOperations.Samples.CPU
         static void Subtract()
         {
             //process is same for parallel
-            SingleThreadedOperator<int, IntOperator> op =
-                new SingleThreadedOperator<int, IntOperator>();
+            SingleThreadedOperator<IntWrapper> op = new SingleThreadedOperator<IntWrapper>();
 
             //two 5*3 matrices
-            UnbufferedFastMatrix<int> one = new UnbufferedFastMatrix<int>(5, 3);
-            UnbufferedFastMatrix<int> two = new UnbufferedFastMatrix<int>(5, 3);
+            FastMatrix<IntWrapper> one = new FastMatrix<IntWrapper>(5, 3);
+            FastMatrix<IntWrapper> two = new FastMatrix<IntWrapper>(5, 3);
 
-            Utilities.FillMatrix<int>(one, 5);
-            Utilities.FillMatrix<int>(two, 10);
+            Utilities.FillMatrix(one, 5);
+            Utilities.FillMatrix(two, 10);
 
-            UnbufferedFastMatrix<int> result = op.Subtract(one, two);
+            FastMatrix<IntWrapper> result = op.Subtract(one, two);
+            result.Print();
         }
     }
 }

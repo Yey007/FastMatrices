@@ -9,24 +9,23 @@ namespace FastMatrixOperations
     /// <summary>
     /// The base class for CPU operators
     /// </summary>
-    public abstract class CPUOperatorBase<T, TOperator>
-        where TOperator : IGenericTypeOperator<T>, new()
+    public abstract class CPUOperatorBase<T>
+        where T: IOperatable<T>
     {
-        public abstract UnbufferedFastMatrix<T> Add(UnbufferedFastMatrix<T> one,
-            UnbufferedFastMatrix<T> two);
-        public abstract UnbufferedFastMatrix<T> Subtract(UnbufferedFastMatrix<T> one,
-            UnbufferedFastMatrix<T> two);
-        public abstract UnbufferedFastMatrix<T> Multiply(UnbufferedFastMatrix<T> one,
-            UnbufferedFastMatrix<T> two);
-        public abstract UnbufferedFastMatrix<T> Transpose(
-            UnbufferedFastMatrix<T> matrix);
+        public abstract FastMatrix<T> Add(FastMatrix<T> one,
+            FastMatrix<T> two);
+        public abstract FastMatrix<T> Subtract(FastMatrix<T> one,
+            FastMatrix<T> two);
+        public abstract FastMatrix<T> Multiply(FastMatrix<T> one,
+            FastMatrix<T> two);
+        public abstract FastMatrix<T> Transpose(
+            FastMatrix<T> matrix);
         protected static T MultiplyArrays(T[] row, T[] column)
         {
-            TOperator op = new TOperator();
-            T sum = op.Multiply(row[0], column[0]);
+            T sum = row[0].Multiply(column[0]);
             for (int i = 1; i < row.Length; i++)
             {
-                sum = op.Add(sum, op.Multiply(row[i], column[i]));
+                sum = sum.Add(row[i].Multiply(column[i]));
             }
 
             return sum;
@@ -36,8 +35,8 @@ namespace FastMatrixOperations
     /// <summary>
     /// Accesses the CPU for operations
     /// </summary>
-    public class SingleThreadedOperator<T, TOperator> : CPUOperatorBase<T, TOperator>
-        where TOperator : IGenericTypeOperator<T>, new()
+    public class SingleThreadedOperator<T> : CPUOperatorBase<T>
+        where T: IOperatable<T>
     {
         /// <summary>
         /// Adds two matrices on the CPU using a single thread
@@ -45,7 +44,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the addition</returns>
-        public override UnbufferedFastMatrix<T> Add(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        public override FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two)
         {
             if(one == null || two == null)
             {
@@ -53,16 +52,15 @@ namespace FastMatrixOperations
             }
             if ((one.GetSize(0) != two.GetSize(0)) || (one.GetSize(1) != two.GetSize(1)))
             {
-                throw new BadDimensionException("The matrices to be added " +
-                    "do not have the same sizes!");
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
-            TOperator op = new TOperator();
-            UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            FastMatrix<T> fastMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
             for (int i = 0; i < one.GetSize(0); i++)
             {
                 for (int j = 0; j < one.GetSize(1); j++)
                 {
-                    fastMatrix[i, j] = op.Add(one[i, j], two[i, j]);
+                    fastMatrix[i, j] = one[i, j].Add(two[i, j]);
                 }
             }
             return fastMatrix;
@@ -74,7 +72,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the multiplication</returns>
-        public override UnbufferedFastMatrix<T> Multiply(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        public override FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -82,11 +80,10 @@ namespace FastMatrixOperations
             }
             if (one.GetSize(1) != two.GetSize(0))
             {
-                throw new BadDimensionException("Matrices to be multiplied do not have compliant " 
-                    + "sizes! The number of columns in matrix one is " + one.GetSize(1) + " while "
-                    + "the number of rows in matrix two is " + two.GetSize(0));
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
-            UnbufferedFastMatrix<T> returnMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            FastMatrix<T> returnMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
 
             for (int i = 0; i < returnMatrix.GetSize(0); i++)
             {
@@ -104,7 +101,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the subtraction (one - two)</returns>
-        public override UnbufferedFastMatrix<T> Subtract(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        public override FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -112,17 +109,16 @@ namespace FastMatrixOperations
             }
             if ((one.GetSize(0) != two.GetSize(0)) || (one.GetSize(1) != two.GetSize(1)))
             {
-                throw new BadDimensionException("The matrices to be " +
-                    "subtracted do not have the same sizes!");
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
-            TOperator op = new TOperator();
-            UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            FastMatrix<T> fastMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
 
             for (int i = 0; i < one.GetSize(0); i++)
             {
                 for (int j = 0; j < one.GetSize(1); j++)
                 {
-                    fastMatrix[i, j] = op.Subtract(one[i, j], two[i, j]);
+                    fastMatrix[i, j] = one[i, j].Subtract(two[i, j]);
                 }
             }
             return fastMatrix;
@@ -133,13 +129,13 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="matrix">The matrix</param>
         /// <returns>The result of the transpose</returns>
-        public override UnbufferedFastMatrix<T> Transpose(UnbufferedFastMatrix<T> matrix)
+        public override FastMatrix<T> Transpose(FastMatrix<T> matrix)
         {
             if (matrix == null)
             {
                 throw new ArgumentNullException();
             }
-            UnbufferedFastMatrix<T> returnMatrix = new UnbufferedFastMatrix<T>(matrix.GetSize(1), matrix.GetSize(0));
+            FastMatrix<T> returnMatrix = new FastMatrix<T>(matrix.GetSize(1), matrix.GetSize(0));
             for (int i = 0; i < matrix.GetSize(0); i++)
             {
                 for (int j = 0; j < matrix.GetSize(1); j++)
@@ -154,8 +150,8 @@ namespace FastMatrixOperations
     /// <summary>
     /// Accesses the CPU for operations, but operations run using multiple threads
     /// </summary>
-    public class MultiThreadedOperator<T, TOperator> : CPUOperatorBase<T, TOperator>
-        where TOperator : IGenericTypeOperator<T>, new()
+    public class MultiThreadedOperator<T> : CPUOperatorBase<T>
+        where T: IOperatable<T>
     {
         /// <summary>
         /// Adds two matrices on the CPU using multiple threads
@@ -163,7 +159,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the addition</returns>
-        public override UnbufferedFastMatrix<T> Add(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        public override FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -171,16 +167,15 @@ namespace FastMatrixOperations
             }
             if ((one.GetSize(0) != two.GetSize(0)) || (one.GetSize(1) != two.GetSize(1)))
             {
-                throw new BadDimensionException("The matrices to be " +
-                    "added do not have the same sizes!");
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
-            TOperator op = new TOperator();
-            UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            FastMatrix<T> fastMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
             Parallel.For(0, one.GetSize(0), i =>
             {
                 for (int j = 0; j < one.GetSize(1); j++)
                 {
-                    fastMatrix[i, j] = op.Add(one[i, j], two[i, j]);
+                    fastMatrix[i, j] = one[i, j].Add(two[i, j]);
                 }
             });
             return fastMatrix;
@@ -192,7 +187,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the multiplication</returns>
-        public override UnbufferedFastMatrix<T> Multiply(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        public override FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -200,12 +195,11 @@ namespace FastMatrixOperations
             }
             if (one.GetSize(1) != two.GetSize(0))
             {
-                throw new BadDimensionException("Matrices to be multiplied do not have compliant " 
-                    + "sizes! The number of columns in matrix one is " + one.GetSize(1) + " while " 
-                    + "the number of rows in matrix two is " + two.GetSize(0));
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
 
-            UnbufferedFastMatrix<T> returnMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            FastMatrix<T> returnMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
 
             Parallel.For(0, returnMatrix.GetSize(0), (i) =>
             {
@@ -223,7 +217,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the subtraction (one - two)</returns>
-        public override UnbufferedFastMatrix<T> Subtract(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        public override FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -231,16 +225,15 @@ namespace FastMatrixOperations
             }
             if ((one.GetSize(0) != two.GetSize(0)) || (one.GetSize(1) != two.GetSize(1)))
             {
-                throw new BadDimensionException("The matrices to be " +
-                    "subtracted do not have the same sizes!");
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
-            TOperator op = new TOperator();
-            UnbufferedFastMatrix<T> fastMatrix = new UnbufferedFastMatrix<T>(one.GetSize(0), two.GetSize(1));
+            FastMatrix<T> fastMatrix = new FastMatrix<T>(one.GetSize(0), two.GetSize(1));
             Parallel.For(0, one.GetSize(0), i =>
             {
                 for (int j = 0; j < one.GetSize(1); j++)
                 {
-                    fastMatrix[i, j] = op.Subtract(one[i, j], two[i, j]);
+                    fastMatrix[i, j] = one[i, j].Subtract(two[i, j]);
                 }
             });
             return fastMatrix;
@@ -251,13 +244,13 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="matrix">The matrix</param>
         /// <returns>The transposed matrix</returns>
-        public override UnbufferedFastMatrix<T> Transpose(UnbufferedFastMatrix<T> matrix)
+        public override FastMatrix<T> Transpose(FastMatrix<T> matrix)
         {
             if (matrix == null)
             {
                 throw new ArgumentNullException();
             }
-            UnbufferedFastMatrix<T> returnMatrix = new UnbufferedFastMatrix<T>(matrix.GetSize(1), matrix.GetSize(0));
+            FastMatrix<T> returnMatrix = new FastMatrix<T>(matrix.GetSize(1), matrix.GetSize(0));
 
             Parallel.For(0, matrix.GetSize(0), (i) =>
             {
@@ -283,9 +276,8 @@ namespace FastMatrixOperations
     /// You can mitigate this overhead by starting copies early using 
     /// <see cref="FastMatrixOperations.FastMatrix.CopyToGPU"/> <br></br>
     /// </remarks>
-    public class GPUOperator<T, TOperator>
-        where T : unmanaged
-        where TOperator: struct, IStructTypeOperator<T>
+    public class GPUOperator<T>
+        where T : unmanaged, IGPUOperatable<T>
     {
         private Accelerator accelerator = HardwareAcceleratorManager.GPUAccelerator;
 
@@ -303,11 +295,11 @@ namespace FastMatrixOperations
             }
             if ((one.GetSize(0) != two.GetSize(0)) || (one.GetSize(1) != two.GetSize(1)))
             {
-                throw new BadDimensionException("The matrices to be " +
-                    "added do not have the same sizes!");
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
 
-            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator> kernel;
+            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
             int groupSize = accelerator.MaxNumThreadsPerGroup;
             SharedMemoryConfig config;
             KernelConfig kernelConfig;
@@ -327,13 +319,13 @@ namespace FastMatrixOperations
             if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
                 kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
-                    ArrayView2D<T>, TOperator>(GPUAdd);
+                    ArrayView2D<T>>(GPUAdd);
                 config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
             }
             else
             {
                 kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
-                    ArrayView2D<T>, TOperator>(GPUAddFallback);
+                    ArrayView2D<T>>(GPUAddFallback);
                 config = SharedMemoryConfig.Empty;
             }
 
@@ -343,7 +335,7 @@ namespace FastMatrixOperations
             two.WaitForCopy();
 
             kernelConfig = ((resultBuffer.Length + groupSize - 1) / groupSize, groupSize, config);
-            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View, default);
+            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View);
 
             accelerator.Synchronize();
 
@@ -368,12 +360,11 @@ namespace FastMatrixOperations
             }
             if (one.GetSize(1) != two.GetSize(0))
             {
-                throw new BadDimensionException("Matrices to be multiplied do not have compliant " 
-                    + "sizes! The number of columns in matrix one is " + one.GetSize(1) + " while " 
-                    + "the number of rows in matrix two is " + two.GetSize(0));
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
 
-            Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator> kernel;
+            Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
             MemoryBuffer2D<T> resultBuffer;
 
             //start tasks
@@ -388,14 +379,13 @@ namespace FastMatrixOperations
             }
 
             kernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>, 
-                ArrayView2D<T>, ArrayView2D<T>, TOperator>(GPUMult);
+                ArrayView2D<T>, ArrayView2D<T>>(GPUMult);
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), two.GetSize(1));
 
             one.WaitForCopy();
             two.WaitForCopy();
 
-            kernel(resultBuffer.Extent, one.buffer.View, two.buffer.View, resultBuffer.View, 
-                default);
+            kernel(resultBuffer.Extent, one.buffer.View, two.buffer.View, resultBuffer.View);
 
             accelerator.Synchronize();
 
@@ -420,11 +410,11 @@ namespace FastMatrixOperations
             }
             if ((one.GetSize(0) != two.GetSize(0)) || (one.GetSize(1) != two.GetSize(1)))
             {
-                throw new BadDimensionException("The matrices to be " +
-                    "subtracted do not have the same sizes!");
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
 
-            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>, TOperator> kernel;
+            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
             int groupSize = accelerator.MaxNumThreadsPerGroup;
             SharedMemoryConfig config;
             KernelConfig kernelConfig;
@@ -444,13 +434,13 @@ namespace FastMatrixOperations
             if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
                 kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
-                    ArrayView2D<T>, TOperator>(GPUSub);
+                    ArrayView2D<T>>(GPUSub);
                 config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
             }
             else
             {
                 kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
-                    ArrayView2D<T>, TOperator>(GPUSubFallback);
+                    ArrayView2D<T>>(GPUSubFallback);
                 config = SharedMemoryConfig.Empty;
             }
 
@@ -460,7 +450,7 @@ namespace FastMatrixOperations
             two.WaitForCopy();
 
             kernelConfig = ((resultBuffer.Length + groupSize - 1) / groupSize, groupSize, config);
-            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View, default);
+            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View);
 
             accelerator.Synchronize();
 
@@ -509,7 +499,7 @@ namespace FastMatrixOperations
         //kernels
         #region Kernels
         private static void GPUAdd(ArrayView2D<T> aView, ArrayView2D<T> bView, 
-            ArrayView2D<T> resView, TOperator op)
+            ArrayView2D<T> resView)
         {
             int x = Group.IdxX;
             int y = Group.IdxY;
@@ -518,20 +508,20 @@ namespace FastMatrixOperations
             Index2 group = new Index2(x, y);
             Index2 global = new Index2(globalX, globalY);
             var shared = SharedMemory.GetDynamic<T>().As2DView(group);
-            shared[group] = op.Add(aView[group], bView[group]);
+            shared[group] = aView[group].Add(bView[group]);
             Group.Barrier();
             resView[global] = shared[group];
         }
         private static void GPUAddFallback(ArrayView2D<T> aView, ArrayView2D<T> bView,
-            ArrayView2D<T> resView, TOperator op)
+            ArrayView2D<T> resView)
         {
             int x = Group.IdxX;
             int y = Group.IdxY;
             Index2 group = new Index2(x, y);
-            resView[group] = op.Add(aView[group], bView[group]);
+            resView[group] = aView[group].Add(bView[group]);
         }
         private static void GPUSub(ArrayView2D<T> aView, ArrayView2D<T> bView, 
-            ArrayView2D<T> resView, TOperator op)
+            ArrayView2D<T> resView)
         {
             int x = Group.IdxX;
             int y = Group.IdxY;
@@ -540,28 +530,30 @@ namespace FastMatrixOperations
             Index2 group = new Index2(x, y);
             Index2 global = new Index2(globalX, globalY);
             var shared = SharedMemory.GetDynamic<T>().As2DView(group);
-            shared[group] = op.Subtract(aView[group], bView[group]);
+            shared[group] = aView[group].Subtract(bView[group]);
             Group.Barrier();
             resView[global] = shared[group];
         }
         private static void GPUSubFallback(ArrayView2D<T> aView, ArrayView2D<T> bView, 
-            ArrayView2D<T> resView, TOperator op)
+            ArrayView2D<T> resView)
         {
             int x = Group.IdxX;
             int y = Group.IdxY;
             Index2 group = new Index2(x, y);
-            resView[group] = op.Subtract(aView[group], bView[group]);
+            resView[group] = aView[group].Subtract(bView[group]);
         }
         private static void GPUMult(Index2 index, ArrayView2D<T> aView, ArrayView2D<T> bView, 
-            ArrayView2D<T> resView, TOperator op)
+            ArrayView2D<T> resView)
         {
             int x = index.X; //matrix one row
             int y = index.Y; //matrix two column
-            T sum = op.Multiply(aView[x, 0], bView[0, y]); //this needs to be done explicitly so we know where to start
+
+            //this needs to be done explicitly so we know where to start
+            T sum = aView[x, 0].Multiply(bView[0, y]); 
 
             for (int i = 1; i < aView.Height; i++)
             {
-                sum = op.Add(sum, op.Multiply(aView[x, i], bView[i, y]));
+                sum = sum.Add(aView[x, i].Multiply(bView[i, y]));
             }
             resView[index] = sum;
         }

@@ -1,7 +1,7 @@
 ﻿
 namespace FastMatrixOperations.Tests
 {
-    public struct Vector3
+    public struct Vector3 : IGPUOperatable<Vector3>
     {
         public Vector3(int x, int y, int z)
         {
@@ -33,6 +33,21 @@ namespace FastMatrixOperations.Tests
             return (this.x == vector.x) && (this.y == vector.y) && (this.z == vector.z);
         }
 
+        public Vector3 Add(Vector3 t)
+        {
+            return this + t;
+        }
+
+        public Vector3 Subtract(Vector3 t)
+        {
+            return this - t;
+        }
+
+        public Vector3 Multiply(Vector3 t)
+        {
+            return this * t;
+        }
+
         public static bool operator ==(Vector3 left, Vector3 right)
         {
             return left.Equals(right);
@@ -41,24 +56,6 @@ namespace FastMatrixOperations.Tests
         public static bool operator !=(Vector3 left, Vector3 right)
         {
             return !left.Equals(right);
-        }
-    }
-
-    public struct Vector3Operator : IStructTypeOperator<Vector3>
-    {
-        public Vector3 Add(Vector3 first, Vector3 second)
-        {
-            return first + second;
-        }
-
-        public Vector3 Multiply(Vector3 first, Vector3 second)
-        {
-            return first * second;
-        }
-
-        public Vector3 Subtract(Vector3 first, Vector3 second)
-        {
-            return first - second;
         }
     }
 }

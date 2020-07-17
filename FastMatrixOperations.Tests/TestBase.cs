@@ -21,7 +21,7 @@ namespace FastMatrixOperations.Tests
             return resultArray;
         }
 
-        protected UnbufferedFastMatrix<T> MakeUnbufferedMatrix(int rows, int columns, T value)
+        protected FastMatrix<T> MakeMatrix(int rows, int columns, T value)
         {
             T[,] resultArray = new T[rows, columns];
             for (int i = 0; i < rows; i++)
@@ -32,13 +32,13 @@ namespace FastMatrixOperations.Tests
                 }
             }
 
-            return new UnbufferedFastMatrix<T>(resultArray);
+            return new FastMatrix<T>(resultArray);
         }
 
-        protected BufferedFastMatrix<TUnmanaged> MakeBufferedMatrix<TUnmanaged>(int rows, int columns, TUnmanaged value)
-            where TUnmanaged : unmanaged
+        protected BufferedFastMatrix<Tgpu> MakeBufferedMatrix<Tgpu>(int rows, int columns, Tgpu value)
+            where Tgpu : unmanaged
         {
-            TUnmanaged[,] resultArray = new TUnmanaged[rows, columns];
+            Tgpu[,] resultArray = new Tgpu[rows, columns];
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < columns; j++)
@@ -47,10 +47,10 @@ namespace FastMatrixOperations.Tests
                 }
             }
 
-            return new BufferedFastMatrix<TUnmanaged>(resultArray);
+            return new BufferedFastMatrix<Tgpu>(resultArray);
         }
 
-        protected void VerifyResults(UnbufferedFastMatrix<T> matrix, T[,] expected)
+        protected void VerifyResults(FastMatrix<T> matrix, T[,] expected)
         {
             Assert.Equal(matrix.GetSize(0), expected.GetLength(0));
             Assert.Equal(matrix.GetSize(1), expected.GetLength(1));

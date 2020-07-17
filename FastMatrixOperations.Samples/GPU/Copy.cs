@@ -6,8 +6,8 @@ namespace FastMatrixOperations.Samples.GPU
         //you do not have to opy, but the earlier you start it the better
         static void GPUCopy()
         {
-            GPUOperator<int, IntOperator> op = new GPUOperator<int, IntOperator>();
-            BufferedFastMatrix<int> matrix = new BufferedFastMatrix<int>(5, 5);
+            GPUOperator<IntWrapper> op = new GPUOperator<IntWrapper>();
+            BufferedFastMatrix<IntWrapper> matrix = new BufferedFastMatrix<IntWrapper>(5, 5);
 
             //start copying to the GPU
             matrix.CopyToGPU();

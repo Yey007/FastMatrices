@@ -1,7 +1,7 @@
 ﻿
 namespace FastMatrixOperations.Tests
 {
-    public class Vector2
+    public class Vector2 : IOperatable<Vector2>
     {
         int x, y;
 
@@ -32,6 +32,21 @@ namespace FastMatrixOperations.Tests
             return (this.x == vector.x) && (this.y == vector.y);
         }
 
+        public Vector2 Add(Vector2 t)
+        {
+            return this + t;
+        }
+
+        public Vector2 Subtract(Vector2 t)
+        {
+            return this - t;
+        }
+
+        public Vector2 Multiply(Vector2 t)
+        {
+            return this * t;
+        }
+
         public static bool operator ==(Vector2 left, Vector2 right)
         {
             return left.Equals(right);
@@ -40,24 +55,6 @@ namespace FastMatrixOperations.Tests
         public static bool operator !=(Vector2 left, Vector2 right)
         {
             return !left.Equals(right);
-        }
-    }
-
-    public class Vector2Operator : IGenericTypeOperator<Vector2>
-    {
-        public Vector2 Add(Vector2 first, Vector2 second)
-        {
-            return first + second;
-        }
-
-        public Vector2 Multiply(Vector2 first, Vector2 second)
-        {
-            return first * second;
-        }
-
-        public Vector2 Subtract(Vector2 first, Vector2 second)
-        {
-            return first - second;
         }
     }
 }

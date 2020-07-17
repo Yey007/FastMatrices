@@ -13,7 +13,7 @@ namespace FastMatrixOperations
     /// operate on the CPU.
     /// </summary>
     /// <typeparam name="T">The type this matrix should store</typeparam>
-    public class UnbufferedFastMatrix<T>
+    public class FastMatrix<T>
     {
         protected T[,] array2d;
 
@@ -34,22 +34,22 @@ namespace FastMatrixOperations
         }
 
         /// <summary>
-        /// Creates a UnbufferedFastMatrix object with the given dimensions.
+        /// Creates a FastMatrix object with the given dimensions.
         /// </summary>
         /// <param name="rows">The number of rows.</param>
         /// <param name="columns">The number of columns.</param>
-        public UnbufferedFastMatrix(int rows, int columns)
+        public FastMatrix(int rows, int columns)
         {
             array2d = new T[rows, columns];
         }
 
         /// <summary>
-        /// Creates a new UnbufferedFastMatrix object from a jagged array.
+        /// Creates a new FastMatrix object from a jagged array.
         /// </summary>
-        /// <param name="array">The jagged array to be converted into a UnbufferedFastMatrix</param>
+        /// <param name="array">The jagged array to be converted into a FastMatrix</param>
         /// <remarks>Note: The constructor will throw an exception if all 
         /// inner arrays do not have the same length.</remarks>
-        public UnbufferedFastMatrix(T[][] array)
+        public FastMatrix(T[][] array)
         {
             //make sure size is correct
             for (int i = 0; i < array.Length; i++)
@@ -74,10 +74,10 @@ namespace FastMatrixOperations
         }
 
         /// <summary>
-        /// Creates a new UnbufferedFastMatrix object from a two dimensional array.
+        /// Creates a new FastMatrix object from a two dimensional array.
         /// </summary>
         /// <param name="array">A two dimensional array</param>
-        public UnbufferedFastMatrix(T[,] array)
+        public FastMatrix(T[,] array)
         {
             array2d = array;
         }
@@ -157,7 +157,7 @@ namespace FastMatrixOperations
         /// </summary>
         public override bool Equals(object obj)
         {
-            return this.Equals(obj as UnbufferedFastMatrix<T>);
+            return this.Equals(obj as FastMatrix<T>);
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="matrix">The matrix to compare to</param>
         /// <returns>A bool representing wheter they are equal or not</returns>
-        public bool Equals(UnbufferedFastMatrix<T> matrix)
+        public bool Equals(FastMatrix<T> matrix)
         {
             // If parameter is null, return false.
             if (Object.ReferenceEquals(matrix, null))
@@ -220,7 +220,7 @@ namespace FastMatrixOperations
         /// <param name="one">First matrix</param>
         /// <param name="two">Second matrix</param>
         /// <returns>Wheter they are equal or not</returns>
-        public static bool operator ==(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        public static bool operator ==(FastMatrix<T> one, FastMatrix<T> two)
         {
             // Check for null on left side.
             if (Object.ReferenceEquals(one, null))
@@ -241,7 +241,7 @@ namespace FastMatrixOperations
         /// <summary>
         /// Basically just <see cref="operator ==(FastMatrix, FastMatrix)"/> but uno reverse
         /// </summary>
-        public static bool operator !=(UnbufferedFastMatrix<T> one, UnbufferedFastMatrix<T> two)
+        public static bool operator !=(FastMatrix<T> one, FastMatrix<T> two)
         {
             return !(one == two);
         }
@@ -252,7 +252,7 @@ namespace FastMatrixOperations
     /// to the GPU, but it only supports primatives and structs.
     /// </summary>
     /// <typeparam name="T">The type this matrix should store</typeparam>
-    public class BufferedFastMatrix<T> : UnbufferedFastMatrix<T>
+    public class BufferedFastMatrix<T> : FastMatrix<T>
         where T: unmanaged
     {
         public MemoryBuffer2D<T> buffer { get; private set; }

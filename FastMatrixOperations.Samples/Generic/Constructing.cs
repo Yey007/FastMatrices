@@ -11,34 +11,34 @@ namespace FastMatrixOperations.Samples.Generic
         static void Construct()
         {
             //constructs a 10 row by 3 column matrix
-            BufferedFastMatrix<int> withSize = new BufferedFastMatrix<int>(10, 3);
+            FastMatrix<IntWrapper> withSize = new FastMatrix<IntWrapper>(10, 3);
 
-            int[,] array = new int[10, 3];
+            IntWrapper[,] array = new IntWrapper[10, 3];
             //constructs a 10 * 3 matrix from the multidimensional array
-            BufferedFastMatrix<int> with2DArray = new BufferedFastMatrix<int>(array);
+            FastMatrix<IntWrapper> with2DArray = new FastMatrix<IntWrapper>(array);
 
-            int[][] jaggedArray = new int[10][];
-            for(int i = 0, n = jaggedArray.Length; i < n; i++)
+            IntWrapper[][] jaggedArray = new IntWrapper[10][];
+            for(IntWrapper i = 0, n = jaggedArray.Length; i < n; i++)
             {
-                jaggedArray[i] = new int[3];
+                jaggedArray[i] = new IntWrapper[3];
             }
             //constructs a 10 * 3 matrix from the jagged array
-            BufferedFastMatrix<int> withJaggedArray = new BufferedFastMatrix<int>(jaggedArray);
+            FastMatrix<IntWrapper> withJaggedArray = new FastMatrix<IntWrapper>(jaggedArray);
 
-            int[][] badJaggedArray = new int[10][];
-            for (int i = 0, n = jaggedArray.Length; i < n; i++)
+            IntWrapper[][] badJaggedArray = new IntWrapper[10][];
+            for (IntWrapper i = 0, n = jaggedArray.Length; i < n; i++)
             {
                 if (i == 0)
                 {
-                    badJaggedArray[i] = new int[4];
+                    badJaggedArray[i] = new IntWrapper[4];
                 }
                 else
                 {
-                    badJaggedArray[i] = new int[3];
+                    badJaggedArray[i] = new IntWrapper[3];
                 }
             }
             //throws an exception
-            //BufferedFastMatrix<int> withBadJaggedArray = new BufferedFastMatrix<int>(badJaggedArray);
+            //FastMatrix<int> withBadJaggedArray = new FastMatrix<int>(badJaggedArray);
         }
     }
 }

@@ -5,16 +5,16 @@ namespace FastMatrixOperations.Samples.GPU
     {
         static void Subtract()
         {
-            GPUOperator<int, IntOperator> op = new GPUOperator<int, IntOperator>();
+            GPUOperator<IntWrapper> op = new GPUOperator<IntWrapper>();
 
             //two 5*3 matrices
-            BufferedFastMatrix<int> one = new BufferedFastMatrix<int>(5, 3);
-            BufferedFastMatrix<int> two = new BufferedFastMatrix<int>(5, 3);
+            BufferedFastMatrix<IntWrapper> one = new BufferedFastMatrix<IntWrapper>(5, 3);
+            BufferedFastMatrix<IntWrapper> two = new BufferedFastMatrix<IntWrapper>(5, 3);
 
-            Utilities.FillMatrix<int>(one, 5);
-            Utilities.FillMatrix<int>(two, 10);
+            Utilities.FillMatrix(one, 5);
+            Utilities.FillMatrix(two, 10);
 
-            BufferedFastMatrix<int> result = op.Subtract(one, two);
+            BufferedFastMatrix<IntWrapper> result = op.Subtract(one, two);
         }
     }
 }

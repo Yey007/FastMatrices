@@ -4,7 +4,7 @@ namespace FastMatrixOperations.Tests.GPU
 {
     public class GPUStructTests : TestBase<Vector3>
     {
-        GPUOperator<Vector3, Vector3Operator> gpu = new GPUOperator<Vector3, Vector3Operator>();
+        GPUOperator<Vector3> gpu = new GPUOperator<Vector3>();
         Vector3 twenty = new Vector3(20, 20, 20);
         Vector3 fifteen = new Vector3(15, 15, 15);
         Vector3 five = new Vector3(5, 5, 5);
