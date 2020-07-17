@@ -3,7 +3,7 @@ namespace FastMatrixOperations.Samples
 {
     public static class Utilities
     {
-        public static void FillMatrix<T>(UnbufferedFastMatrix<T> matrix, T value)
+        public static void FillMatrix<T>(FastMatrix<T> matrix, T value)
             where T: unmanaged
         {
             for(int i = 0, n = matrix.GetSize(0); i < n; i++)

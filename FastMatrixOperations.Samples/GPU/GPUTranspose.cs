@@ -5,16 +5,16 @@ namespace FastMatrixOperations.Samples.GPU
     { 
         static void Transpose()
         {
-            GPUOperator<int, IntOperator> op = new GPUOperator<int, IntOperator>();
+            GPUOperator<IntWrapper> op = new GPUOperator<IntWrapper>();
 
             //5*3 matrix
-            BufferedFastMatrix<int> one = new BufferedFastMatrix<int>(5, 3);
+            BufferedFastMatrix<IntWrapper> one = new BufferedFastMatrix<IntWrapper>(5, 3);
 
-            Utilities.FillMatrix<int>(one, 5);
+            Utilities.FillMatrix(one, 5);
 
             //10 will start at the bottom left and go to the top right
             one[0, one.GetSize(0) - 1] = 10;
-            BufferedFastMatrix<int> result = op.Transpose(one);
+            BufferedFastMatrix<IntWrapper> result = op.Transpose(one);
         }
     }
 }

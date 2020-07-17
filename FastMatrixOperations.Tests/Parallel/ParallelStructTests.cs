@@ -4,8 +4,7 @@ namespace FastMatrixOperations.Tests.Parallel
 {
     public class ParallelStructTests : TestBase<Vector3>
     {
-        MultiThreadedOperator<Vector3, Vector3Operator> cpu = 
-            new MultiThreadedOperator<Vector3, Vector3Operator>();
+        MultiThreadedOperator<Vector3> cpu = new MultiThreadedOperator<Vector3>();
 
         Vector3 twenty = new Vector3(20, 20, 20);
         Vector3 fifteen = new Vector3(15, 15, 15);
@@ -15,8 +14,8 @@ namespace FastMatrixOperations.Tests.Parallel
         public void Add()
         {
             Vector3[,] expected = MakeResult(size, size, twenty);
-            UnbufferedFastMatrix<Vector3> matrix = MakeUnbufferedMatrix(size, size, fifteen);
-            UnbufferedFastMatrix<Vector3> matrix2 = MakeUnbufferedMatrix(size, size, five);
+            FastMatrix<Vector3> matrix = MakeMatrix(size, size, fifteen);
+            FastMatrix<Vector3> matrix2 = MakeMatrix(size, size, five);
             VerifyResults(cpu.Add(matrix, matrix2), expected);
         }
 
@@ -24,8 +23,8 @@ namespace FastMatrixOperations.Tests.Parallel
         public void Subtract()
         {
             Vector3[,] expected = MakeResult(size, size, fifteen);
-            UnbufferedFastMatrix<Vector3> matrix = MakeUnbufferedMatrix(size, size, twenty);
-            UnbufferedFastMatrix<Vector3> matrix2 = MakeUnbufferedMatrix(size, size, five);
+            FastMatrix<Vector3> matrix = MakeMatrix(size, size, twenty);
+            FastMatrix<Vector3> matrix2 = MakeMatrix(size, size, five);
             VerifyResults(cpu.Subtract(matrix, matrix2), expected);
         }
 
@@ -33,8 +32,8 @@ namespace FastMatrixOperations.Tests.Parallel
         public void Multiply()
         {
             Vector3[,] expected = MakeResult(size, size, new Vector3(375, 375, 375));
-            UnbufferedFastMatrix<Vector3> matrix = MakeUnbufferedMatrix(size, size, fifteen);
-            UnbufferedFastMatrix<Vector3> matrix2 = MakeUnbufferedMatrix(size, size, five);
+            FastMatrix<Vector3> matrix = MakeMatrix(size, size, fifteen);
+            FastMatrix<Vector3> matrix2 = MakeMatrix(size, size, five);
             VerifyResults(cpu.Multiply(matrix, matrix2), expected);
         }
 
@@ -42,7 +41,7 @@ namespace FastMatrixOperations.Tests.Parallel
         public void Transpose()
         {
             Vector3[,] expected = MakeResult(size, size, fifteen);
-            UnbufferedFastMatrix<Vector3> matrix = MakeUnbufferedMatrix(size, size, fifteen);
+            FastMatrix<Vector3> matrix = MakeMatrix(size, size, fifteen);
 
             matrix[0, size - 1] = five;
             expected[size - 1, 0] = five;
