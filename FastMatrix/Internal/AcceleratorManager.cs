@@ -3,7 +3,6 @@ using ILGPU.Runtime;
 using ILGPU.Runtime.CPU;
 using ILGPU.Runtime.Cuda;
 using ILGPU.Runtime.OpenCL;
-using System.Threading.Tasks;
 
 namespace FastMatrixOperations.Internal
 {
@@ -12,7 +11,6 @@ namespace FastMatrixOperations.Internal
     /// </summary>
     public static class HardwareAcceleratorManager
     {
-        private static Task init;
         /// <summary>
         /// Gets the context.
         /// </summary>
@@ -27,10 +25,6 @@ namespace FastMatrixOperations.Internal
         {
             get
             {
-                if(init != null && !init.IsCompleted)
-                {
-                    init.Wait();
-                }
                 getGPUAccelerator();
                 return gpuAccelerator;
             }
