@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ILGPU;
 using ILGPU.Runtime;
 using FastMatrixOperations.Internal;
+using System.Diagnostics;
 
 namespace FastMatrixOperations
 {
@@ -279,7 +280,34 @@ namespace FastMatrixOperations
     public class GPUOperator<T>
         where T : unmanaged, IGPUOperatable<T>
     {
-        private Accelerator accelerator = HardwareAcceleratorManager.GPUAccelerator;
+        private static Accelerator accelerator = HardwareAcceleratorManager.GPUAccelerator;
+
+        #region Preloaded kernels
+        private static Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> 
+            GPUAddKernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
+                ArrayView2D<T>>(GPUAdd);
+
+        private static Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
+            GPUAddFallbackKernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>,
+                ArrayView2D<T>>(GPUAddFallback);
+
+        private static Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
+            GPUMultKernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>,
+                ArrayView2D<T>, ArrayView2D<T>>(GPUMult);
+
+        private static Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
+            GPUSubKernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>,
+                ArrayView2D<T>>(GPUSub);
+
+        private static Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
+            GPUSubFallbackKernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>,
+                ArrayView2D<T>>(GPUSubFallback);
+
+        private static Action<Index2, ArrayView2D<T>, ArrayView2D<T>>
+            GPUTransposeKernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>,
+                ArrayView2D<T>>(GPUTranspose);
+        #endregion
+
 
         /// <summary>
         /// Adds two matrices on the GPU
@@ -299,6 +327,8 @@ namespace FastMatrixOperations
                     two.GetSize(1));
             }
 
+            Stopwatch watch = Stopwatch.StartNew();
+
             Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
             int groupSize = accelerator.MaxNumThreadsPerGroup;
             SharedMemoryConfig config;
@@ -315,32 +345,45 @@ namespace FastMatrixOperations
             {
                 two.CopyToGPU();
             }
+
+            Console.WriteLine($"Copy task start: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
             
             if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
-                    ArrayView2D<T>>(GPUAdd);
+                kernel = GPUAddKernel;
                 config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
             }
             else
             {
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
-                    ArrayView2D<T>>(GPUAddFallback);
+                kernel = GPUAddFallbackKernel;
                 config = SharedMemoryConfig.Empty;
             }
 
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), one.GetSize(1));
 
+            Console.WriteLine($"Result allocate: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
+
             one.WaitForCopy();
             two.WaitForCopy();
+
+            Console.WriteLine($"Copy finish: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
             kernelConfig = ((resultBuffer.Length + groupSize - 1) / groupSize, groupSize, config);
             kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View);
 
             accelerator.Synchronize();
 
+            Console.WriteLine($"Kernel execute: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
+
             var tempArray = resultBuffer.GetAs2DArray();
             accelerator.Synchronize();
+
+            Console.WriteLine($"Copy back: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
             BufferedFastMatrix<T> returnMatrix = new BufferedFastMatrix<T>(tempArray);
             return returnMatrix;
@@ -378,8 +421,7 @@ namespace FastMatrixOperations
                 two.CopyToGPU();
             }
 
-            kernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>, 
-                ArrayView2D<T>, ArrayView2D<T>>(GPUMult);
+            kernel = GPUMultKernel;
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), two.GetSize(1));
 
             one.WaitForCopy();
@@ -433,14 +475,12 @@ namespace FastMatrixOperations
 
             if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
-                    ArrayView2D<T>>(GPUSub);
+                kernel = GPUSubKernel;
                 config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
             }
             else
             {
-                kernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
-                    ArrayView2D<T>>(GPUSubFallback);
+                kernel = GPUSubFallbackKernel;
                 config = SharedMemoryConfig.Empty;
             }
 
@@ -482,8 +522,7 @@ namespace FastMatrixOperations
 
             accelerator = HardwareAcceleratorManager.GPUAccelerator;
             resultBuffer = accelerator.Allocate<T>(matrix.GetSize(1), matrix.GetSize(0));
-            var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>, 
-                ArrayView2D<T>>(GPUTranspose);
+            var kernel = GPUTransposeKernel;
             matrix.WaitForCopy();
 
             kernel(resultBuffer.Extent, matrix.buffer.View, resultBuffer.View);

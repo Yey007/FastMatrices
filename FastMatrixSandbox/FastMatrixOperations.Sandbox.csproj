@@ -7,11 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FastMatrix\FastMatrixOperations.csproj" />
+    <Compile Remove="GPU\**" />
+    <EmbeddedResource Remove="GPU\**" />
+    <None Remove="GPU\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="GPU\" />
+    <ProjectReference Include="..\FastMatrix\FastMatrixOperations.csproj" />
   </ItemGroup>
 
 </Project>
