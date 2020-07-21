@@ -3,6 +3,7 @@ using ILGPU.Runtime;
 using ILGPU.Runtime.CPU;
 using ILGPU.Runtime.Cuda;
 using ILGPU.Runtime.OpenCL;
+using System;
 
 namespace FastMatrixOperations.Internal
 {
@@ -19,7 +20,7 @@ namespace FastMatrixOperations.Internal
         private static Accelerator gpuAccelerator;
 
         /// <summary>
-        /// Gets the g p u accelerator.
+        /// Gets the gpu accelerator.
         /// </summary>
         public static Accelerator GPUAccelerator
         {
@@ -59,7 +60,7 @@ namespace FastMatrixOperations.Internal
             {
                 if (context == null)
                     context = new Context();
-                gpuAccelerator = new CPUAccelerator(context, 1);
+                gpuAccelerator = new CPUAccelerator(context, Environment.ProcessorCount);
                 return;
             }
 

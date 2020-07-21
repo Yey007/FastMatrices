@@ -269,13 +269,8 @@ namespace FastMatrixOperations
     /// Accesses the GPU for operations
     /// </summary>
     /// <typeparam name="T">The type this operator operates on.</typeparam>
-    /// <typeparam name="TOperator">The associated operator. This is necessary as the GPU 
-    /// cannot dynamically resolve operations.</typeparam>
     /// <remarks>
     /// Note: This is not always faster. There is a lot of overhead in copying information.
-    /// <br></br>
-    /// You can mitigate this overhead by starting copies early using 
-    /// <see cref="FastMatrixOperations.FastMatrix.CopyToGPU"/> <br></br>
     /// </remarks>
     public class GPUOperator<T>
         where T : unmanaged, IGPUOperatable<T>
@@ -327,32 +322,21 @@ namespace FastMatrixOperations
                     two.GetSize(1));
             }
 
-            Stopwatch watch = Stopwatch.StartNew();
-
             Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
             int groupSize = accelerator.MaxNumThreadsPerGroup;
             SharedMemoryConfig config;
             KernelConfig kernelConfig;
             MemoryBuffer2D<T> resultBuffer;
 
-            //start tasks
-            if (one.buffer == null)
-            {
-                one.CopyToGPU();
-            }
+            one.CopyToGPU();
+            two.CopyToGPU();
 
-            if (two.buffer == null)
-            {
-                two.CopyToGPU();
-            }
-
-            Console.WriteLine($"Copy task start: {watch.ElapsedMilliseconds}ms");
-            watch.Restart();
-            
             if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
-                kernel = GPUAddKernel;
-                config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
+                //kernel = GPUAddKernel;
+                //config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
+                kernel = GPUAddFallbackKernel;
+                config = SharedMemoryConfig.Empty;
             }
             else
             {
@@ -362,28 +346,16 @@ namespace FastMatrixOperations
 
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), one.GetSize(1));
 
-            Console.WriteLine($"Result allocate: {watch.ElapsedMilliseconds}ms");
-            watch.Restart();
-
             one.WaitForCopy();
             two.WaitForCopy();
-
-            Console.WriteLine($"Copy finish: {watch.ElapsedMilliseconds}ms");
-            watch.Restart();
 
             kernelConfig = ((resultBuffer.Length + groupSize - 1) / groupSize, groupSize, config);
             kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View);
 
             accelerator.Synchronize();
 
-            Console.WriteLine($"Kernel execute: {watch.ElapsedMilliseconds}ms");
-            watch.Restart();
-
             var tempArray = resultBuffer.GetAs2DArray();
             accelerator.Synchronize();
-
-            Console.WriteLine($"Copy back: {watch.ElapsedMilliseconds}ms");
-            watch.Restart();
 
             BufferedFastMatrix<T> returnMatrix = new BufferedFastMatrix<T>(tempArray);
             return returnMatrix;
@@ -411,15 +383,8 @@ namespace FastMatrixOperations
             MemoryBuffer2D<T> resultBuffer;
 
             //start tasks
-            if (one.buffer == null)
-            {
-                one.CopyToGPU();
-            }
-
-            if (two.buffer == null)
-            {
-                two.CopyToGPU();
-            }
+            one.CopyToGPU();
+            two.CopyToGPU();
 
             kernel = GPUMultKernel;
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), two.GetSize(1));
@@ -463,15 +428,8 @@ namespace FastMatrixOperations
             MemoryBuffer2D<T> resultBuffer;
 
             //start tasks
-            if (one.buffer == null)
-            {
-                one.CopyToGPU();
-            }
-
-            if (two.buffer == null)
-            {
-                two.CopyToGPU();
-            }
+            one.CopyToGPU();
+            two.CopyToGPU();
 
             if (accelerator.AcceleratorType == AcceleratorType.Cuda)
             {
@@ -515,10 +473,7 @@ namespace FastMatrixOperations
             Accelerator accelerator;
             MemoryBuffer2D<T> resultBuffer;
 
-            if (matrix.buffer == null)
-            {
-                matrix.CopyToGPU();
-            }
+            matrix.CopyToGPU();
 
             accelerator = HardwareAcceleratorManager.GPUAccelerator;
             resultBuffer = accelerator.Allocate<T>(matrix.GetSize(1), matrix.GetSize(0));

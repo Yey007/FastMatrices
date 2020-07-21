@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using FastMatrixOperations.Internal;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace FastMatrixOperations
 {
@@ -255,18 +256,15 @@ namespace FastMatrixOperations
     public class BufferedFastMatrix<T> : FastMatrix<T>
         where T: unmanaged
     {
-        public MemoryBuffer2D<T> buffer { get; private set; }
-        private Task copyTask;
+        public MemoryBuffer2D<T> buffer { get; private set; } = null;
+        private AcceleratorStream stream = null;
 
         /// <summary>
         /// Creates a BufferedFastMatrix object with the given dimensions.
         /// </summary>
         /// <param name="rows">The number of rows.</param>
         /// <param name="columns">The number of columns.</param>
-        public BufferedFastMatrix(int rows, int columns) : base(rows, columns)
-        {
-            buffer = null;
-        }
+        public BufferedFastMatrix(int rows, int columns) : base(rows, columns) { }
 
         /// <summary>
         /// Creates a new BufferedFastMatrix object from a jagged array.
@@ -274,73 +272,24 @@ namespace FastMatrixOperations
         /// <param name="array">The jagged array to be converted into a BufferedFastMatrix</param>
         /// <remarks>Note: The constructor will throw an exception if all 
         /// inner arrays do not have the same length.</remarks>
-        public BufferedFastMatrix(T[][] array) : base(array)
-        {
-            //set buffer to null so it can be set later/checked
-            buffer = null;
-        }
+        public BufferedFastMatrix(T[][] array) : base(array) {}
 
         /// <summary>
         /// Creates a new BufferedFastMatrix object from a two dimensional array.
         /// </summary>
         /// <param name="array">A two dimensional array</param>
-        public BufferedFastMatrix(T[,] array) : base(array)
-        {
-            buffer = null;
-        }
+        public BufferedFastMatrix(T[,] array) : base(array) {}
 
-        /// <summary>
-        /// Copies the matrix to GPU memory.
-        /// </summary>
-        /// <returns>The stream associated with copying the matrix</returns>
-        /// <remarks>
-        /// Runs asynchronously.
-        /// You can wait for the task to finish by calling <seealso cref="WaitForCopy"/>
-        /// </remarks>
         public void CopyToGPU()
         {
-            copyTask = new Task(CopyToGPUWorker);
-            copyTask.Start();
-        }
-
-        /// <summary>
-        /// The actual function ran from for <see cref="CopyToGPU"/>
-        /// </summary>
-        private unsafe void CopyToGPUWorker()
-        {
-            if(HardwareAcceleratorManager.GPUAccelerator.MemorySize < 
-                (GetSize(0) * GetSize(1) * sizeof(T)))
-            {
-                throw new OutOfMemoryException("The GPU doesn't have enough " +
-                    "memory to house an array of this size!");
-            }
-
             var accelerator = HardwareAcceleratorManager.GPUAccelerator;
-
-            if (accelerator.AcceleratorType == AcceleratorType.Cuda)
+            if (stream == null)
             {
-                var CPUAccelerator = new CPUAccelerator(accelerator.Context);
-                var stream = accelerator.CreateStream();
-                var pinnedCPUBuffer = CPUAccelerator.Allocate<T>(
-                    new Index2(GetSize(0), GetSize(1)));
-
-                buffer = accelerator.Allocate<T>(pinnedCPUBuffer.Extent);
-
-                //copy to CPU buffer
-                pinnedCPUBuffer.CopyFrom(array2d, Index2.Zero, Index2.Zero, 
-                    pinnedCPUBuffer.Extent);
-
-                //copy to GPU
-                lock (buffer)
-                {
-                    buffer.CopyFrom(stream, pinnedCPUBuffer, Index2.Zero);
-                }
-                stream.Synchronize();
+                stream = accelerator.CreateStream();
             }
-            else
+            if (buffer == null) //this is fine as we cannot resize matrices
             {
                 buffer = accelerator.Allocate<T>(GetSize(0), GetSize(1));
-                buffer.CopyFrom(array2d, Index2.Zero, Index2.Zero, buffer.Extent);
             }
         }
 
@@ -349,9 +298,9 @@ namespace FastMatrixOperations
         /// </summary>
         public void WaitForCopy()
         {
-            if (copyTask != null && copyTask.Status == TaskStatus.Running)
+            if (stream != null)
             {
-                copyTask.Wait();
+                stream.Synchronize();
             }
         }
     }
