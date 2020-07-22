@@ -4,6 +4,7 @@ using ILGPU;
 using ILGPU.Runtime;
 using FastMatrixOperations.Internal;
 using System.Diagnostics;
+using ILGPU.Runtime.Cuda;
 
 namespace FastMatrixOperations
 {
@@ -275,34 +276,33 @@ namespace FastMatrixOperations
     public class GPUOperator<T>
         where T : unmanaged, IGPUOperatable<T>
     {
-        private static Accelerator accelerator = HardwareAcceleratorManager.GPUAccelerator;
+        private static Accelerator accelerator;
 
         #region Preloaded kernels
-        private static Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> 
-            GPUAddKernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>, 
-                ArrayView2D<T>>(GPUAdd);
-
-        private static Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
-            GPUAddFallbackKernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>,
-                ArrayView2D<T>>(GPUAddFallback);
+        private static Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
+            GPUAddKernel;
 
         private static Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
-            GPUMultKernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>,
-                ArrayView2D<T>, ArrayView2D<T>>(GPUMult);
+             GPUSubKernel;
 
-        private static Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
-            GPUSubKernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>,
-                ArrayView2D<T>>(GPUSub);
+        private static Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
+            GPUMultKernel;
 
-        private static Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>>
-            GPUSubFallbackKernel = accelerator.LoadStreamKernel<ArrayView2D<T>, ArrayView2D<T>,
-                ArrayView2D<T>>(GPUSubFallback);
-
-        private static Action<Index2, ArrayView2D<T>, ArrayView2D<T>>
-            GPUTransposeKernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>,
-                ArrayView2D<T>>(GPUTranspose);
+        private static Action<Index2, ArrayView2D<T>, ArrayView2D<T>> GPUTransposeKernel;
         #endregion
 
+        static GPUOperator()
+        {
+            accelerator = HardwareAcceleratorManager.GPUAccelerator;
+            GPUAddKernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>, 
+                ArrayView2D<T>, ArrayView2D<T>>(GPUAdd);
+            GPUSubKernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>,
+                ArrayView2D<T>, ArrayView2D<T>>(GPUSub);
+            GPUMultKernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>,
+                ArrayView2D<T>, ArrayView2D<T>>(GPUMult);
+            GPUTransposeKernel = accelerator.LoadAutoGroupedStreamKernel<Index2, ArrayView2D<T>,
+                ArrayView2D<T>>(GPUTranspose);
+        }
 
         /// <summary>
         /// Adds two matrices on the GPU
@@ -322,35 +322,64 @@ namespace FastMatrixOperations
                     two.GetSize(1));
             }
 
-            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
-            int groupSize = accelerator.MaxNumThreadsPerGroup;
-            SharedMemoryConfig config;
-            KernelConfig kernelConfig;
+            Stopwatch watch = Stopwatch.StartNew();
             MemoryBuffer2D<T> resultBuffer;
 
             one.CopyToGPU();
             two.CopyToGPU();
 
-            if (accelerator.AcceleratorType == AcceleratorType.Cuda)
+            resultBuffer = accelerator.Allocate<T>(one.GetSize(0), one.GetSize(1));
+
+            one.WaitForCopy(); //this function call is currently not required, 
+                               //will come up with a better solution later but for now I'm just
+                               //gonna leave it here
+            two.WaitForCopy();
+
+            GPUAddKernel(resultBuffer.Extent, one.buffer.View, two.buffer.View, resultBuffer.View);
+
+            accelerator.Synchronize();
+            Console.WriteLine($"Execution: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
+
+            var tempArray = resultBuffer.GetAs2DArray();
+            accelerator.Synchronize();
+            Console.WriteLine($"Copy back: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
+
+            BufferedFastMatrix<T> returnMatrix = new BufferedFastMatrix<T>(tempArray);
+            return returnMatrix;
+        }
+
+        /// <summary>
+        /// Subtracts two matrices on the GPU
+        /// </summary>
+        /// <param name="one">The first matrix</param>
+        /// <param name="two">The second matrix</param>
+        /// <returns>The result of the subtraction (one - two) </returns>
+        public BufferedFastMatrix<T> Subtract(BufferedFastMatrix<T> one, BufferedFastMatrix<T> two)
+        {
+            if (one == null || two == null)
             {
-                //kernel = GPUAddKernel;
-                //config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
-                kernel = GPUAddFallbackKernel;
-                config = SharedMemoryConfig.Empty;
+                throw new ArgumentNullException();
             }
-            else
+            if ((one.GetSize(0) != two.GetSize(0)) || (one.GetSize(1) != two.GetSize(1)))
             {
-                kernel = GPUAddFallbackKernel;
-                config = SharedMemoryConfig.Empty;
+                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
+                    two.GetSize(1));
             }
+
+            MemoryBuffer2D<T> resultBuffer;
+
+            //start tasks
+            one.CopyToGPU();
+            two.CopyToGPU();
 
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), one.GetSize(1));
 
             one.WaitForCopy();
             two.WaitForCopy();
 
-            kernelConfig = ((resultBuffer.Length + groupSize - 1) / groupSize, groupSize, config);
-            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View);
+            GPUSubKernel(resultBuffer.Extent, one.buffer.View, two.buffer.View, resultBuffer.View);
 
             accelerator.Synchronize();
 
@@ -379,81 +408,36 @@ namespace FastMatrixOperations
                     two.GetSize(1));
             }
 
+            Stopwatch watch = Stopwatch.StartNew();
             Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
             MemoryBuffer2D<T> resultBuffer;
 
             //start tasks
             one.CopyToGPU();
             two.CopyToGPU();
+            Console.WriteLine($"Copy: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
-            kernel = GPUMultKernel;
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), two.GetSize(1));
+            Console.WriteLine($"Alloc: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
             one.WaitForCopy();
             two.WaitForCopy();
+            Console.WriteLine($"Finish copy: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
-            kernel(resultBuffer.Extent, one.buffer.View, two.buffer.View, resultBuffer.View);
+            GPUMultKernel(resultBuffer.Extent, one.buffer.View, two.buffer.View, 
+                resultBuffer.View);
 
             accelerator.Synchronize();
+            Console.WriteLine($"Execute: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
             var tempArray = resultBuffer.GetAs2DArray();
             accelerator.Synchronize();
-
-            BufferedFastMatrix<T> returnMatrix = new BufferedFastMatrix<T>(tempArray);
-            return returnMatrix;
-        }
-
-        /// <summary>
-        /// Subtracts two matrices on the GPU
-        /// </summary>
-        /// <param name="one">The first matrix</param>
-        /// <param name="two">The second matrix</param>
-        /// <returns>The result of the subtraction (one - two) </returns>
-        public BufferedFastMatrix<T> Subtract(BufferedFastMatrix<T> one, BufferedFastMatrix<T> two)
-        {
-            if (one == null || two == null)
-            {
-                throw new ArgumentNullException();
-            }
-            if ((one.GetSize(0) != two.GetSize(0)) || (one.GetSize(1) != two.GetSize(1)))
-            {
-                throw new BadDimensionException(one.GetSize(0), one.GetSize(1), two.GetSize(0),
-                    two.GetSize(1));
-            }
-
-            Action<KernelConfig, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
-            int groupSize = accelerator.MaxNumThreadsPerGroup;
-            SharedMemoryConfig config;
-            KernelConfig kernelConfig;
-            MemoryBuffer2D<T> resultBuffer;
-
-            //start tasks
-            one.CopyToGPU();
-            two.CopyToGPU();
-
-            if (accelerator.AcceleratorType == AcceleratorType.Cuda)
-            {
-                kernel = GPUSubKernel;
-                config = SharedMemoryConfig.RequestDynamic<T>(groupSize);
-            }
-            else
-            {
-                kernel = GPUSubFallbackKernel;
-                config = SharedMemoryConfig.Empty;
-            }
-
-            resultBuffer = accelerator.Allocate<T>(one.GetSize(0), one.GetSize(1));
-
-            one.WaitForCopy();
-            two.WaitForCopy();
-
-            kernelConfig = ((resultBuffer.Length + groupSize - 1) / groupSize, groupSize, config);
-            kernel(kernelConfig, one.buffer.View, two.buffer.View, resultBuffer.View);
-
-            accelerator.Synchronize();
-
-            var tempArray = resultBuffer.GetAs2DArray();
-            accelerator.Synchronize();
+            Console.WriteLine($"Copy back: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
             BufferedFastMatrix<T> returnMatrix = new BufferedFastMatrix<T>(tempArray);
             return returnMatrix;
@@ -492,49 +476,15 @@ namespace FastMatrixOperations
 
         //kernels
         #region Kernels
-        private static void GPUAdd(ArrayView2D<T> aView, ArrayView2D<T> bView, 
+        private static void GPUAdd(Index2 index, ArrayView2D<T> aView, ArrayView2D<T> bView, 
             ArrayView2D<T> resView)
         {
-            int x = Group.IdxX;
-            int y = Group.IdxY;
-            int globalX = Grid.GlobalIndex.X;
-            int globalY = Grid.GlobalIndex.Y;
-            Index2 group = new Index2(x, y);
-            Index2 global = new Index2(globalX, globalY);
-            var shared = SharedMemory.GetDynamic<T>().As2DView(group);
-            shared[group] = aView[group].Add(bView[group]);
-            Group.Barrier();
-            resView[global] = shared[group];
+            resView[index] = aView[index].Add(bView[index]);
         }
-        private static void GPUAddFallback(ArrayView2D<T> aView, ArrayView2D<T> bView,
+        private static void GPUSub(Index2 index, ArrayView2D<T> aView, ArrayView2D<T> bView, 
             ArrayView2D<T> resView)
         {
-            int x = Group.IdxX;
-            int y = Group.IdxY;
-            Index2 group = new Index2(x, y);
-            resView[group] = aView[group].Add(bView[group]);
-        }
-        private static void GPUSub(ArrayView2D<T> aView, ArrayView2D<T> bView, 
-            ArrayView2D<T> resView)
-        {
-            int x = Group.IdxX;
-            int y = Group.IdxY;
-            int globalX = Grid.GlobalIndex.X;
-            int globalY = Grid.GlobalIndex.Y;
-            Index2 group = new Index2(x, y);
-            Index2 global = new Index2(globalX, globalY);
-            var shared = SharedMemory.GetDynamic<T>().As2DView(group);
-            shared[group] = aView[group].Subtract(bView[group]);
-            Group.Barrier();
-            resView[global] = shared[group];
-        }
-        private static void GPUSubFallback(ArrayView2D<T> aView, ArrayView2D<T> bView, 
-            ArrayView2D<T> resView)
-        {
-            int x = Group.IdxX;
-            int y = Group.IdxY;
-            Index2 group = new Index2(x, y);
-            resView[group] = aView[group].Subtract(bView[group]);
+            resView[index] = aView[index].Subtract(bView[index]);
         }
         private static void GPUMult(Index2 index, ArrayView2D<T> aView, ArrayView2D<T> bView, 
             ArrayView2D<T> resView)

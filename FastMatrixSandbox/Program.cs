@@ -26,6 +26,10 @@ namespace FastMatrixOperations.Sandbox
 
             gpu.Add(one, two);
             Console.WriteLine($"Adding matrices: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
+            gpu.Multiply(one, two);
+            Console.WriteLine($"Multiplying matrices: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
         }
     }
 }

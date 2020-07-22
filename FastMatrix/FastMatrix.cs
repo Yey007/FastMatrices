@@ -258,6 +258,7 @@ namespace FastMatrixOperations
     {
         public MemoryBuffer2D<T> buffer { get; private set; } = null;
         private AcceleratorStream stream = null;
+        private Task copy;
 
         /// <summary>
         /// Creates a BufferedFastMatrix object with the given dimensions.
@@ -282,7 +283,9 @@ namespace FastMatrixOperations
 
         public void CopyToGPU()
         {
+            Stopwatch watch = Stopwatch.StartNew();
             var accelerator = HardwareAcceleratorManager.GPUAccelerator;
+
             if (stream == null)
             {
                 stream = accelerator.CreateStream();
@@ -291,11 +294,15 @@ namespace FastMatrixOperations
             {
                 buffer = accelerator.Allocate<T>(GetSize(0), GetSize(1));
             }
+            buffer.CopyFrom(stream, array2d, Index2.Zero, Index2.Zero, buffer.Extent); 
         }
 
         /// <summary>
-        /// Waits for <see cref="CopyToGPU"/> to finsih if running
+        /// Waits for <see cref="CopyToGPU"/> to finish
         /// </summary>
+        /// <remarks>
+        /// This function is useless until Multidimensional ExchangeBuffers release
+        /// </remarks>
         public void WaitForCopy()
         {
             if (stream != null)
