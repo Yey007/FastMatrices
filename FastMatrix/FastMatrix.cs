@@ -133,7 +133,6 @@ namespace FastMatrixOperations
             {
                 rowData[i] = array2d[row, i];
             }
-
             return rowData;
         }
 
@@ -283,7 +282,6 @@ namespace FastMatrixOperations
 
         public void CopyToGPU()
         {
-            Stopwatch watch = Stopwatch.StartNew();
             var accelerator = HardwareAcceleratorManager.GPUAccelerator;
 
             if (stream == null)

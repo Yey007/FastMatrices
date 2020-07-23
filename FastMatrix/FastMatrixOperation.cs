@@ -11,33 +11,23 @@ namespace FastMatrixOperations
     /// <summary>
     /// The base class for CPU operators
     /// </summary>
-    public abstract class CPUOperatorBase<T>
+    public interface ICpuOperator<T>
         where T: IOperatable<T>
     {
-        public abstract FastMatrix<T> Add(FastMatrix<T> one,
+        public FastMatrix<T> Add(FastMatrix<T> one,
             FastMatrix<T> two);
-        public abstract FastMatrix<T> Subtract(FastMatrix<T> one,
+        public FastMatrix<T> Subtract(FastMatrix<T> one,
             FastMatrix<T> two);
-        public abstract FastMatrix<T> Multiply(FastMatrix<T> one,
+        public FastMatrix<T> Multiply(FastMatrix<T> one,
             FastMatrix<T> two);
-        public abstract FastMatrix<T> Transpose(
+        public FastMatrix<T> Transpose(
             FastMatrix<T> matrix);
-        protected static T MultiplyArrays(T[] row, T[] column)
-        {
-            T sum = row[0].Multiply(column[0]);
-            for (int i = 1; i < row.Length; i++)
-            {
-                sum = sum.Add(row[i].Multiply(column[i]));
-            }
-
-            return sum;
-        }
     }
 
     /// <summary>
     /// Accesses the CPU for operations
     /// </summary>
-    public class SingleThreadedOperator<T> : CPUOperatorBase<T>
+    public class SingleThreadedOperator<T> : ICpuOperator<T>
         where T: IOperatable<T>
     {
         /// <summary>
@@ -46,7 +36,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the addition</returns>
-        public override FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two)
+        public FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two)
         {
             if(one == null || two == null)
             {
@@ -74,7 +64,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the multiplication</returns>
-        public override FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two)
+        public FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -91,7 +81,12 @@ namespace FastMatrixOperations
             {
                 for (int j = 0; j < returnMatrix.GetSize(1); j++)
                 {
-                    returnMatrix[i, j] = MultiplyArrays(one.GetRow(i), two.GetColumn(j));
+                    T sum = one[i, 0].Multiply(two[0, j]);
+                    for (int k = 1; k < one.GetSize(0); k++)
+                    {
+                        sum = sum.Add(one[i, k].Multiply(two[k, j]));
+                    }
+                    returnMatrix[i, j] = sum;
                 }
             }
             return returnMatrix;
@@ -103,7 +98,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the subtraction (one - two)</returns>
-        public override FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two)
+        public FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -131,7 +126,7 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="matrix">The matrix</param>
         /// <returns>The result of the transpose</returns>
-        public override FastMatrix<T> Transpose(FastMatrix<T> matrix)
+        public FastMatrix<T> Transpose(FastMatrix<T> matrix)
         {
             if (matrix == null)
             {
@@ -152,7 +147,7 @@ namespace FastMatrixOperations
     /// <summary>
     /// Accesses the CPU for operations, but operations run using multiple threads
     /// </summary>
-    public class MultiThreadedOperator<T> : CPUOperatorBase<T>
+    public class MultiThreadedOperator<T> : ICpuOperator<T>
         where T: IOperatable<T>
     {
         /// <summary>
@@ -161,7 +156,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the addition</returns>
-        public override FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two)
+        public FastMatrix<T> Add(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -189,7 +184,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the multiplication</returns>
-        public override FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two)
+        public FastMatrix<T> Multiply(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -207,7 +202,12 @@ namespace FastMatrixOperations
             {
                 for (int j = 0; j < returnMatrix.GetSize(1); j++)
                 {
-                    returnMatrix[i, j] = MultiplyArrays(one.GetRow(i), two.GetColumn(j));
+                    T sum = one[i, 0].Multiply(two[0, j]);
+                    for (int k = 1; k < one.GetSize(0); k++)
+                    {
+                        sum = sum.Add(one[i, k].Multiply(two[k, j]));
+                    }
+                    returnMatrix[i, j] = sum;
                 }
             });
             return returnMatrix;
@@ -219,7 +219,7 @@ namespace FastMatrixOperations
         /// <param name="one">The first matrix</param>
         /// <param name="two">The second matrix</param>
         /// <returns>The result of the subtraction (one - two)</returns>
-        public override FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two)
+        public FastMatrix<T> Subtract(FastMatrix<T> one, FastMatrix<T> two)
         {
             if (one == null || two == null)
             {
@@ -246,7 +246,7 @@ namespace FastMatrixOperations
         /// </summary>
         /// <param name="matrix">The matrix</param>
         /// <returns>The transposed matrix</returns>
-        public override FastMatrix<T> Transpose(FastMatrix<T> matrix)
+        public FastMatrix<T> Transpose(FastMatrix<T> matrix)
         {
             if (matrix == null)
             {
@@ -327,13 +327,19 @@ namespace FastMatrixOperations
 
             one.CopyToGPU();
             two.CopyToGPU();
+            Console.WriteLine($"Copy: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), one.GetSize(1));
+            Console.WriteLine($"Allocate: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
             one.WaitForCopy(); //this function call is currently not required, 
                                //will come up with a better solution later but for now I'm just
                                //gonna leave it here
             two.WaitForCopy();
+            Console.WriteLine($"Finish copy: {watch.ElapsedMilliseconds}ms");
+            watch.Restart();
 
             GPUAddKernel(resultBuffer.Extent, one.buffer.View, two.buffer.View, resultBuffer.View);
 
@@ -375,7 +381,7 @@ namespace FastMatrixOperations
             two.CopyToGPU();
 
             resultBuffer = accelerator.Allocate<T>(one.GetSize(0), one.GetSize(1));
-
+            
             one.WaitForCopy();
             two.WaitForCopy();
 
@@ -409,7 +415,6 @@ namespace FastMatrixOperations
             }
 
             Stopwatch watch = Stopwatch.StartNew();
-            Action<Index2, ArrayView2D<T>, ArrayView2D<T>, ArrayView2D<T>> kernel;
             MemoryBuffer2D<T> resultBuffer;
 
             //start tasks
@@ -491,7 +496,7 @@ namespace FastMatrixOperations
         {
             int x = index.X; //matrix one row
             int y = index.Y; //matrix two column
-
+            
             //this needs to be done explicitly so we know where to start
             T sum = aView[x, 0].Multiply(bView[0, y]); 
 

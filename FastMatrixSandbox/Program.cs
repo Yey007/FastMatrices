@@ -8,6 +8,7 @@ namespace FastMatrixOperations.Sandbox
     {
         static void Main(string[] args)
         {
+            Random random = new Random();
             Stopwatch watch = Stopwatch.StartNew();
 
             GPUOperator<DoubleWrapper> gpu = new GPUOperator<DoubleWrapper>();
@@ -19,8 +20,8 @@ namespace FastMatrixOperations.Sandbox
             Console.WriteLine($"Two 1000x1000 allocations: {watch.ElapsedMilliseconds}ms");
             watch.Restart();
 
-            Utilities.FillMatrix(one, 21.983017498);
-            Utilities.FillMatrix(two, 187.29801987);
+            Utilities.FillMatrix(one, random.NextDouble());
+            Utilities.FillMatrix(two, random.NextDouble());
             Console.WriteLine($"Filling matrices: {watch.ElapsedMilliseconds}ms");
             watch.Restart();
 
@@ -33,3 +34,4 @@ namespace FastMatrixOperations.Sandbox
         }
     }
 }
+
