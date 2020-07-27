@@ -45,5 +45,5 @@ structs and primitives only. Currently, there is no way around this.
 # Contributing
 If you want to contribute to this, there aren't many guidelines really. If you want to add a feature, just open an issue,
 fork the repo, and start working. Open a PR when you want to. Just try to stay clean with your code, write some
-tests/update the existing ones when you're done if necessary, and don't go over 100 characters per line. If you're ever confused, by
+tests/update the existing ones when you're done if necessary, and don't go over 100 characters per line. If you're ever confused by
 some shitty code I wrote, don't ask because I probably don't know either (Jk you can ask any time). Thanks for reading!
