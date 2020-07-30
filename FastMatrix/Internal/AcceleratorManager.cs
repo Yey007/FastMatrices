@@ -39,6 +39,7 @@ namespace FastMatrixOperations.Internal
         {
             if (gpuAccelerator != null)
                 return;
+            
             if (CudaAccelerator.CudaAccelerators.Length > 0)
             {
                 if (context == null)
@@ -56,11 +57,13 @@ namespace FastMatrixOperations.Internal
                     return;
                 }
             }
+            
+ 
             if (CPUAccelerator.CPUAccelerators.Length > 0)
             {
                 if (context == null)
                     context = new Context();
-                gpuAccelerator = new CPUAccelerator(context, Environment.ProcessorCount);
+                gpuAccelerator = new CPUAccelerator(context, 8);
                 return;
             }
 

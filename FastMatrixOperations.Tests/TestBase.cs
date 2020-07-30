@@ -1,5 +1,4 @@
-﻿using System;
-using Xunit;
+﻿using Xunit;
 
 namespace FastMatrixOperations.Tests
 {
@@ -50,13 +49,13 @@ namespace FastMatrixOperations.Tests
             return new BufferedFastMatrix<Tgpu>(resultArray);
         }
 
-        protected void VerifyResults(FastMatrix<T> matrix, T[,] expected)
+        protected void VerifyResults(FastMatrixBase<T> matrix, T[,] expected)
         {
-            Assert.Equal(matrix.GetSize(0), expected.GetLength(0));
-            Assert.Equal(matrix.GetSize(1), expected.GetLength(1));
-            for (int i = 0; i < matrix.GetSize(0); i++)
+            Assert.Equal(matrix.Rows, expected.GetLength(0));
+            Assert.Equal(matrix.Columns, expected.GetLength(1));
+            for (int i = 0; i < matrix.Rows; i++)
             {
-                for (int j = 0; j < matrix.GetSize(1); j++)
+                for (int j = 0; j < matrix.Columns; j++)
                 {
                     Assert.Equal(expected[i, j], matrix[i, j]);
                 }

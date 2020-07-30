@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+
 namespace FastMatrixOperations.Samples.CPU
 {
     static class CPUAdd
@@ -16,7 +17,7 @@ namespace FastMatrixOperations.Samples.CPU
             Utilities.FillMatrix(two, 10);
 
             FastMatrix<IntWrapper> result = op.Add(one, two);
-            result.Print();
+            Console.WriteLine(result);
         }
     }
 }
